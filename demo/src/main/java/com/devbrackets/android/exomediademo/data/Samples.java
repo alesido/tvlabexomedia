@@ -26,8 +26,8 @@ public class Samples {
 
         //Video items
         videoSamples = new ArrayList<>();
-        videoSamples.add(new Sample("FLV - Big Buck Bunny by Blender", "http://vod.leasewebcdn.com/bbb.flv?ri=1024&rs=150&start=0"));
-        videoSamples.add(new Sample("HLS - ArtBeats", "http://cdn-fms.rbs.com.br/vod/hls_sample1_manifest.m3u8"));
+        videoSamples.add(new Sample("FLV - Big Buck Bunny by Blender", "http://212.224.119.195:8087/media/hls_183_151/1tv_hd/index.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8yMS8yMDE3IDM6MTA6MDQgUE0maGFzaF92YWx1ZT14OVFsMmNkeUI2UDd0OElsUHVQdXJnPT0mdmFsaWRtaW51dGVzPTIwMCZpZD0zMw==")); //"http://vod.leasewebcdn.com/bbb.flv?ri=1024&rs=150&start=0"));
+        videoSamples.add(new Sample("HLS - ArtBeats", "http://212.224.119.195:8087/media/hls_183_150/rostest/index.m3u8?wmsAuthSign=c2VydmVyX3RpbWU9OC8zMC8yMDE3IDY6MDA6MTcgQU0maGFzaF92YWx1ZT1lVUFOZmgydmVOYmRiT1BJemhOT0Z3PT0mdmFsaWRtaW51dGVzPTIwMCZpZD0zMw==")); //"http://cdn-fms.rbs.com.br/vod/hls_sample1_manifest.m3u8"));
         videoSamples.add(new Sample("HLS - Sintel by Blender", "https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8"));
         videoSamples.add(new Sample("MKV - Android Screens", "http://storage.googleapis.com/exoplayer-test-media-1/mkv/android-screens-lavf-56.36.100-aac-avc-main-1280x720.mkv"));
         videoSamples.add(new Sample("MP4 (VP9) - Google Glass", "http://demos.webmproject.org/exoplayer/glass.mp4"));

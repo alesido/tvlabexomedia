@@ -215,21 +215,42 @@ public class VideoView extends RelativeLayout {
         return previewImageView;
     }
 
-    public void setControls(@Nullable VideoControls controls) {
-        if (videoControls != null && videoControls != controls) {
+    public void setControls(@Nullable VideoControls controls, boolean ... options) {
+        boolean hasAnotherParent = options.length > 0 && options[0];
+        if (videoControls != null && videoControls != controls && !hasAnotherParent) {
             removeView(videoControls);
         }
 
         if (controls != null) {
             videoControls = controls;
             controls.setVideoView(this);
-            addView(controls);
+            if (!hasAnotherParent)
+                addView(controls);
+        }
+        else {
+            videoControls = null;
         }
 
         //Sets the onTouch listener to show the controls
         TouchListener listener = new TouchListener(getContext());
         setOnTouchListener(videoControls != null ? listener : null);
     }
+
+//    public void setControls(@Nullable VideoControls controls) {
+//        if (videoControls != null && videoControls != controls) {
+//            removeView(videoControls);
+//        }
+//
+//        if (controls != null) {
+//            videoControls = controls;
+//            controls.setVideoView(this);
+//            addView(controls);
+//        }
+//
+//        //Sets the onTouch listener to show the controls
+//        TouchListener listener = new TouchListener(getContext());
+//        setOnTouchListener(videoControls != null ? listener : null);
+//    }
 
     /**
      * Requests the {@link VideoControls} to become visible.  This should only be called after
