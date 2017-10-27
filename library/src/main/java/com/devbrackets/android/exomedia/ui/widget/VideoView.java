@@ -33,6 +33,7 @@ import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
+import android.view.TextureView;
 import android.view.View;
 import android.view.ViewStub;
 import android.widget.ImageView;
@@ -417,7 +418,21 @@ public class VideoView extends RelativeLayout {
      * If a video is currently in playback, it will be paused
      */
     public void pause() {
-        audioFocusHelper.abandonFocus();
+        pause(false);
+    }
+
+    /**
+     * Pauses the current video in playback, only abandoning the audio focus if
+     * <code>transientFocusLoss</code> is <code>false</code>. Calling {@link #pause()} should
+     * be used in most cases unless the audio focus is being handled manually
+     *
+     * @param transientFocusLoss <code>true</code> if the pause is temporary and the audio focus should be retained
+     */
+    public void pause(boolean transientFocusLoss) {
+        if (!transientFocusLoss) {
+            audioFocusHelper.abandonFocus();
+        }
+
         videoViewImpl.pause();
         setKeepScreenOn(false);
 
@@ -685,6 +700,26 @@ public class VideoView extends RelativeLayout {
     }
 
     /**
+     * Returns a {@link Bitmap} representation of the current contents of the
+     * view. If the surface isn't ready or we cannot access it for some reason then
+     * <code>null</code> will be returned instead.
+     *
+     * <b>NOTE:</b> Only the <code>TextureView</code> implementations support getting the bitmap
+     * meaning that if the backing implementation is a <code>SurfaceView</code> then the result
+     * will always be <code>null</code>
+     *
+     * @return A {@link Bitmap} representation of the view or <code>null</code>
+     */
+    @Nullable
+    public Bitmap getBitmap() {
+        if (videoViewImpl instanceof TextureView) {
+            return ((TextureView) videoViewImpl).getBitmap();
+        }
+
+        return null;
+    }
+
+    /**
      * Performs the functionality to setup the initial properties including
      * determining the backing implementation and reading xml attributes
      *
@@ -843,7 +878,7 @@ public class VideoView extends RelativeLayout {
                 case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
                     if (isPlaying()) {
                         pausedForLoss = true;
-                        pause();
+                        pause(true);
                     }
                     break;
             }
