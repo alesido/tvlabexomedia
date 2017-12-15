@@ -267,7 +267,7 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
         // Maps the available tracks
         RendererType[] types = new RendererType[] {RendererType.AUDIO, RendererType.VIDEO, RendererType.CLOSED_CAPTION, RendererType.METADATA};
         for (RendererType type : types) {
-            int exoPlayerTrackIndex = getExoPlayerTrackType(type);
+            int exoPlayerTrackIndex = getExoPlayerTrackType(type) - 1;
             if (mappedTrackInfo.length > exoPlayerTrackIndex) {
                 trackMap.put(type, mappedTrackInfo.getTrackGroups(exoPlayerTrackIndex));
             }
@@ -296,7 +296,7 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
 
     public void setSelectedTrack(@NonNull RendererType type, int index) {
         // Retrieves the available tracks
-        int exoPlayerTrackIndex = getExoPlayerTrackType(type);
+        int exoPlayerTrackIndex = getExoPlayerTrackType(type) - 1;
         MappingTrackSelector.MappedTrackInfo mappedTrackInfo = trackSelector.getCurrentMappedTrackInfo();
         TrackGroupArray trackGroupArray = mappedTrackInfo == null ? null : mappedTrackInfo.getTrackGroups(exoPlayerTrackIndex);
         if (trackGroupArray == null || trackGroupArray.length == 0) {
