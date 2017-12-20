@@ -304,12 +304,13 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
         }
 
         // Creates the track selection override
-        int[] tracks = new int[] {index};
+        int[] tracks = new int[] {0};
         TrackSelection.Factory factory = tracks.length == 1 ? new FixedTrackSelection.Factory() : adaptiveTrackSelectionFactory;
-        MappingTrackSelector.SelectionOverride selectionOverride = new MappingTrackSelector.SelectionOverride(factory, exoPlayerTrackIndex, tracks);
+        MappingTrackSelector.SelectionOverride selectionOverride = new MappingTrackSelector.SelectionOverride(factory, index, tracks);
 
         // Specifies the correct track to use
-        trackSelector.setSelectionOverride(exoPlayerTrackIndex, trackGroupArray, selectionOverride);
+        trackSelector.setRendererDisabled(exoPlayerTrackIndex, false);
+        trackSelector.setSelectionOverride(exoPlayerTrackIndex,  trackGroupArray, selectionOverride);
     }
 
     public void setVolume(@FloatRange(from = 0.0, to = 1.0) float volume) {
