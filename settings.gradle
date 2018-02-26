@@ -1,1 +1,1 @@
-include ':library', ':demo'
+include ':library', ':demo', ':Peer5ExoPlayerPlugin-debug', ':Peer5ExoPlayerPlugin-release'

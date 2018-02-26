@@ -19,13 +19,16 @@ dependencies {
     compile "com.google.android.exoplayer:exoplayer-dash:$rootProject.ext.exoPlayerVersion"
     compile "com.google.android.exoplayer:exoplayer-hls:$rootProject.ext.exoPlayerVersion"
     compile "com.google.android.exoplayer:exoplayer-smoothstreaming:$rootProject.ext.exoPlayerVersion"
+
+    debugCompile project(':Peer5ExoPlayerPlugin-debug')
+    releaseCompile project(':Peer5ExoPlayerPlugin-release')
 }
 
 android {
     compileSdkVersion 27
 
     defaultConfig {
-        minSdkVersion 14
+        minSdkVersion 16
         targetSdkVersion 27
 
         versionCode versionMajor * 10000 + versionMinor * 1000 + versionPatch * 100

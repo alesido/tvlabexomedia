@@ -75,6 +75,7 @@ import com.google.android.exoplayer2.trackselection.TrackSelection;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.util.Util;
 import com.google.android.exoplayer2.video.VideoRendererEventListener;
+import com.peer5.sdk.exoplayer2.Peer5ExoPlayerPlugin;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -161,6 +162,8 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
         LoadControl loadControl = ExoMedia.Data.loadControl != null ? ExoMedia.Data.loadControl : new DefaultLoadControl();
         player = ExoPlayerFactory.newInstance(renderers.toArray(new Renderer[renderers.size()]), trackSelector, loadControl);
         player.addListener(this);
+
+        Peer5ExoPlayerPlugin.listen(player, context.getApplicationContext());
     }
 
     @Override
