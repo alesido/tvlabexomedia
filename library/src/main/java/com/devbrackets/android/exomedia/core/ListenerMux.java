@@ -32,6 +32,7 @@ import com.devbrackets.android.exomedia.listener.OnCompletionListener;
 import com.devbrackets.android.exomedia.listener.OnErrorListener;
 import com.devbrackets.android.exomedia.listener.OnPreparedListener;
 import com.devbrackets.android.exomedia.listener.OnSeekCompletionListener;
+import com.google.android.exoplayer2.Format;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.metadata.Metadata;
 
@@ -64,6 +65,8 @@ public class ListenerMux implements ExoPlayerListener, MediaPlayer.OnPreparedLis
     private OnErrorListener errorListener;
     @Nullable
     private MetadataListener metadataListener;
+    @Nullable
+    private HealthMonitor healthMonitor;
 
     @NonNull
     private WeakReference<ClearableSurface> clearableSurfaceRef = new WeakReference<>(null);
@@ -156,6 +159,10 @@ public class ListenerMux implements ExoPlayerListener, MediaPlayer.OnPreparedLis
         if (bufferUpdateListener != null) {
             bufferUpdateListener.onBufferingUpdate(percent);
         }
+
+        if (healthMonitor != null) {
+            healthMonitor.onBufferingUpdate(percent);
+        }
     }
 
     @Override
@@ -168,6 +175,30 @@ public class ListenerMux implements ExoPlayerListener, MediaPlayer.OnPreparedLis
     @Override
     public void onVideoSizeChanged(int width, int height, int unAppliedRotationDegrees, float pixelWidthHeightRatio) {
         muxNotifier.onVideoSizeChanged(width, height, unAppliedRotationDegrees, pixelWidthHeightRatio);
+    }
+
+    /** alsi++
+     */
+    public void onBandwidthSample(int elapsedMs, long bytes, long bitrate) {
+        if (healthMonitor != null) {
+            healthMonitor.onBandwidthSample(elapsedMs, bytes, bitrate);
+        }
+    }
+
+    /** alsi++
+     */
+    public void onVideoInputFormatChanged(Format format) {
+        if (healthMonitor != null) {
+            healthMonitor.onVideoInputFormatChanged(format);
+        }
+    }
+
+    /** alsi++
+     */
+    public void onDroppedFrames(int count, long elapsedMs) {
+        if (healthMonitor != null) {
+            healthMonitor.onDroppedFrames(count, elapsedMs);
+        }
     }
 
     /**
@@ -233,6 +264,12 @@ public class ListenerMux implements ExoPlayerListener, MediaPlayer.OnPreparedLis
      */
     public void setMetadataListener(@Nullable MetadataListener listener) {
         metadataListener = listener;
+    }
+
+    /** alsi++
+     */
+    public void setHealthMonitor(@Nullable HealthMonitor healthMonitor) {
+        this.healthMonitor = healthMonitor;
     }
 
     /**
@@ -303,6 +340,7 @@ public class ListenerMux implements ExoPlayerListener, MediaPlayer.OnPreparedLis
             }
         });
     }
+
 
     public static abstract class Notifier {
         public void onSeekComplete() {

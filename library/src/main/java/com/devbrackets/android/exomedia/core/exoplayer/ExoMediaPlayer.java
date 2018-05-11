@@ -72,6 +72,7 @@ import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.trackselection.FixedTrackSelection;
 import com.google.android.exoplayer2.trackselection.MappingTrackSelector;
 import com.google.android.exoplayer2.trackselection.TrackSelection;
+import com.google.android.exoplayer2.upstream.BandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.util.Util;
 import com.google.android.exoplayer2.video.VideoRendererEventListener;
@@ -123,7 +124,10 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
     @NonNull
     private MediaSourceProvider mediaSourceProvider = new MediaSourceProvider();
     @NonNull
-    private DefaultBandwidthMeter bandwidthMeter = new DefaultBandwidthMeter();
+    private DefaultBandwidthMeter bandwidthMeter;
+
+    private BandwidthMeter.EventListener externalBandwidthMeterListener;
+    private VideoRendererEventListener statsGetterListener;
 
     @Nullable
     private CaptionListener captionListener;
@@ -149,6 +153,14 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
 
         mainHandler = new Handler();
 
+        bandwidthMeter = new DefaultBandwidthMeter(mainHandler, new BandwidthMeter.EventListener() {
+            @Override
+            public void onBandwidthSample(int elapsedMs, long bytes, long bitrate) {
+                if (externalBandwidthMeterListener != null)
+                    externalBandwidthMeterListener.onBandwidthSample(elapsedMs, bytes, bitrate);
+            }
+        });
+
         ComponentListener componentListener = new ComponentListener();
         RendererProvider rendererProvider = new RendererProvider(context, mainHandler, componentListener, componentListener, componentListener, componentListener);
         rendererProvider.setDrmSessionManager(generateDrmSessionManager());
@@ -161,6 +173,8 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
         LoadControl loadControl = ExoMedia.Data.loadControl != null ? ExoMedia.Data.loadControl : new DefaultLoadControl();
         player = ExoPlayerFactory.newInstance(renderers.toArray(new Renderer[renderers.size()]), trackSelector, loadControl);
         player.addListener(this);
+
+        player.addListener(ExoEventWatcher.getInstance());
     }
 
     @Override
@@ -225,6 +239,14 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
 
     public void setMetadataListener(@Nullable MetadataListener listener) {
         metadataListener = listener;
+    }
+
+    public void setBandwidthMeterListener(@Nullable BandwidthMeter.EventListener listener) {
+        externalBandwidthMeterListener = listener;
+    }
+
+    public void setVideoStatsListener(@Nullable VideoRendererEventListener listener) {
+        statsGetterListener = listener;
     }
 
     public void setSurface(@Nullable Surface surface) {
@@ -742,12 +764,14 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
 
         @Override
         public void onVideoInputFormatChanged(Format format) {
-            // Purposefully left blank
+            if (statsGetterListener != null)
+                statsGetterListener.onVideoInputFormatChanged(format);
         }
 
         @Override
         public void onDroppedFrames(int count, long elapsedMs) {
-            // Purposefully left blank
+            if (statsGetterListener != null)
+                statsGetterListener.onDroppedFrames(count, elapsedMs);
         }
 
         @Override

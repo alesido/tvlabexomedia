@@ -30,10 +30,14 @@ import com.devbrackets.android.exomedia.core.exoplayer.ExoMediaPlayer;
 import com.devbrackets.android.exomedia.core.listener.MetadataListener;
 import com.devbrackets.android.exomedia.core.video.ClearableSurface;
 import com.devbrackets.android.exomedia.listener.OnBufferUpdateListener;
+import com.google.android.exoplayer2.Format;
+import com.google.android.exoplayer2.decoder.DecoderCounters;
 import com.google.android.exoplayer2.drm.MediaDrmCallback;
 import com.google.android.exoplayer2.metadata.Metadata;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
+import com.google.android.exoplayer2.upstream.BandwidthMeter;
+import com.google.android.exoplayer2.video.VideoRendererEventListener;
 
 import java.util.Map;
 
@@ -213,9 +217,14 @@ public class ExoVideoDelegate {
 
         exoMediaPlayer.setMetadataListener(internalListeners);
         exoMediaPlayer.setBufferUpdateListener(internalListeners);
+
+        // alsi++
+        exoMediaPlayer.setBandwidthMeterListener(internalListeners);
+        exoMediaPlayer.setVideoStatsListener(internalListeners);
     }
 
-    protected class InternalListeners implements MetadataListener, OnBufferUpdateListener {
+    protected class InternalListeners implements MetadataListener, OnBufferUpdateListener,
+            BandwidthMeter.EventListener, VideoRendererEventListener {
         @Override
         public void onMetadata(Metadata metadata) {
             listenerMux.onMetadata(metadata);
@@ -224,6 +233,46 @@ public class ExoVideoDelegate {
         @Override
         public void onBufferingUpdate(@IntRange(from = 0, to = 100) int percent) {
             listenerMux.onBufferingUpdate(percent);
+        }
+
+        @Override
+        public void onBandwidthSample(int elapsedMs, long bytes, long bitrate) {
+            listenerMux.onBandwidthSample(elapsedMs, bytes, bitrate);
+        }
+
+        @Override
+        public void onVideoEnabled(DecoderCounters counters) {
+            // left empty as not applicable
+        }
+
+        @Override
+        public void onVideoDecoderInitialized(String decoderName, long initializedTimestampMs, long initializationDurationMs) {
+            // left empty as not applicable
+        }
+
+        @Override
+        public void onVideoInputFormatChanged(Format format) {
+            listenerMux.onVideoInputFormatChanged(format);
+        }
+
+        @Override
+        public void onDroppedFrames(int count, long elapsedMs) {
+            listenerMux.onDroppedFrames(count, elapsedMs);
+        }
+
+        @Override
+        public void onVideoSizeChanged(int width, int height, int unappliedRotationDegrees, float pixelWidthHeightRatio) {
+            // left empty as not applicable
+        }
+
+        @Override
+        public void onRenderedFirstFrame(Surface surface) {
+            // left empty as not applicable
+        }
+
+        @Override
+        public void onVideoDisabled(DecoderCounters counters) {
+            // left empty as not applicable
         }
     }
 }

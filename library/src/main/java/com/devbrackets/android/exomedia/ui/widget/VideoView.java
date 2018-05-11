@@ -41,6 +41,7 @@ import android.widget.RelativeLayout;
 
 import com.devbrackets.android.exomedia.ExoMedia;
 import com.devbrackets.android.exomedia.R;
+import com.devbrackets.android.exomedia.core.HealthMonitor;
 import com.devbrackets.android.exomedia.core.ListenerMux;
 import com.devbrackets.android.exomedia.core.api.VideoViewApi;
 import com.devbrackets.android.exomedia.core.exoplayer.ExoMediaPlayer;
@@ -233,8 +234,7 @@ public class VideoView extends RelativeLayout {
         }
 
         //Sets the onTouch listener to show the controls
-        TouchListener listener = new TouchListener(getContext());
-        setOnTouchListener(videoControls != null ? listener : null);
+        setOnTouchListener(videoControls != null ? new TouchListener(getContext()) : null);
     }
 
 //    public void setControls(@Nullable VideoControls controls) {
@@ -255,7 +255,7 @@ public class VideoView extends RelativeLayout {
 
     /**
      * Requests the {@link VideoControls} to become visible.  This should only be called after
-     * {@link #setControls(VideoControls)}.
+     * {@link #setControls(VideoControls, boolean...)}.
      */
     public void showControls() {
         if (videoControls != null) {
@@ -269,7 +269,7 @@ public class VideoView extends RelativeLayout {
 
     /**
      * Retrieves the video controls being used by this view.
-     * If the controls haven't been specified with {@link #setControls(VideoControls)}
+     * If the controls haven't been specified with {@link #setControls(VideoControls, boolean...)}
      * or through the XML attribute <code>useDefaultControls</code> this will return
      * null
      *
@@ -699,6 +699,10 @@ public class VideoView extends RelativeLayout {
         muxNotifier.videoSizeChangedListener = listener;
     }
 
+    public void setHealthMonitor(HealthMonitor healthMonitor) {
+        listenerMux.setHealthMonitor(healthMonitor);
+    }
+
     /**
      * Returns a {@link Bitmap} representation of the current contents of the
      * view. If the surface isn't ready or we cannot access it for some reason then
@@ -1025,7 +1029,7 @@ public class VideoView extends RelativeLayout {
     protected class AttributeContainer {
         /**
          * Specifies if the {@link VideoControls} should be added to the view.  These
-         * can be added through source code with {@link #setControls(VideoControls)}
+         * can be added through source code with {@link #setControls(VideoControls, boolean...)}
          */
         public boolean useDefaultControls = false;
 
