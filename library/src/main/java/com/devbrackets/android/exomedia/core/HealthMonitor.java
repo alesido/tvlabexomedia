@@ -16,4 +16,10 @@ public interface HealthMonitor
     void onVideoInputFormatChanged(Format format);
 
     void onDroppedFrames(int count, long elapsedMs);
+
+    void onStreamFormatRecognized(String mediaSourceClassName);
+
+    void onPlaybackStateChangeReport(String reportText);
+
+    void onVideoDecoderInitialized(String decoderName);
 }

@@ -60,7 +60,7 @@ class ExoEventWatcher extends Player.DefaultEventListener
     @Override
     public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
         super.onPlayerStateChanged(playWhenReady, playbackState);
-        Log.d(TAG, "onPlayerStateChanged: now state: " + playbackState);
+        Log.d(TAG, "onPlayerStateChanged: now state: " + getStateString(playbackState));
     }
 
     @Override
@@ -71,5 +71,20 @@ class ExoEventWatcher extends Player.DefaultEventListener
     @Override
     public void onPositionDiscontinuity(int reason) {
         super.onPositionDiscontinuity(reason);
+    }
+
+    private static String getStateString(int state){
+        switch (state) {
+            case Player.STATE_BUFFERING:
+                return "BUFFERING";
+            case Player.STATE_ENDED:
+                return "ENDED";
+            case Player.STATE_IDLE:
+                return "IDLE";
+            case Player.STATE_READY:
+                return "READY";
+            default:
+                return "UNDEFINED";
+        }
     }
 }

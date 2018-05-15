@@ -126,8 +126,13 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
     @NonNull
     private DefaultBandwidthMeter bandwidthMeter;
 
+    // alsi++
     private BandwidthMeter.EventListener externalBandwidthMeterListener;
-    private VideoRendererEventListener statsGetterListener;
+    private VideoRendererEventListener videoRendererListener;
+
+    // alsi++
+    private ExoPlayerStateReportListener playerStateReportListener;
+    private ExoPlayerStateReportHelper playerStateReportHelper;
 
     @Nullable
     private CaptionListener captionListener;
@@ -208,6 +213,10 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
     public void setMediaSource(@Nullable MediaSource source) {
         this.mediaSource = source;
 
+        if (playerStateReportListener != null && mediaSource != null) {
+            playerStateReportListener.onStreamFormatRecognized(mediaSource.getClass().getSimpleName());
+        }
+
         prepared = false;
         prepare();
     }
@@ -245,8 +254,23 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
         externalBandwidthMeterListener = listener;
     }
 
-    public void setVideoStatsListener(@Nullable VideoRendererEventListener listener) {
-        statsGetterListener = listener;
+    public void setVideoRendererListener(@Nullable VideoRendererEventListener listener) {
+        videoRendererListener = listener;
+    }
+
+    public void setPlayerStateReportListener(@Nullable ExoPlayerStateReportListener listener) {
+        if (listener != null) {
+            playerStateReportListener = listener;
+            playerStateReportHelper = new ExoPlayerStateReportHelper(player, playerStateReportListener);
+            playerStateReportHelper.start();
+        }
+        else {
+            playerStateReportListener = null;
+            if (playerStateReportHelper != null) {
+                playerStateReportHelper.stop();
+                playerStateReportListener = null;
+            }
+        }
     }
 
     public void setSurface(@Nullable Surface surface) {
@@ -718,11 +742,15 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
         @Override
         public void onAudioEnabled(DecoderCounters counters) {
             // Purposefully left blank
+            if (playerStateReportHelper != null)
+                playerStateReportHelper.setAudioDecoderCounters(counters);
         }
 
         @Override
         public void onAudioDisabled(DecoderCounters counters) {
             audioSessionId = C.AUDIO_SESSION_ID_UNSET;
+            if (playerStateReportHelper != null)
+                playerStateReportHelper.setAudioDecoderCounters(counters);
         }
 
         @Override
@@ -737,7 +765,8 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
 
         @Override
         public void onAudioInputFormatChanged(Format format) {
-            // Purposefully left blank
+            if (playerStateReportHelper != null)
+                playerStateReportHelper.setAudioFormat(format);
         }
 
         @Override
@@ -750,11 +779,15 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
         @Override
         public void onVideoEnabled(DecoderCounters counters) {
             // Purposefully left blank
+            if (playerStateReportHelper != null)
+                playerStateReportHelper.setVideoDecoderCounters(counters);
         }
 
         @Override
         public void onVideoDisabled(DecoderCounters counters) {
             // Purposefully left blank
+            if (playerStateReportHelper != null)
+                playerStateReportHelper.setVideoDecoderCounters(counters);
         }
 
         @Override
@@ -764,14 +797,16 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
 
         @Override
         public void onVideoInputFormatChanged(Format format) {
-            if (statsGetterListener != null)
-                statsGetterListener.onVideoInputFormatChanged(format);
+            if (videoRendererListener != null)
+                videoRendererListener.onVideoInputFormatChanged(format);
+            if (playerStateReportHelper != null)
+                playerStateReportHelper.setVideoFormat(format);
         }
 
         @Override
         public void onDroppedFrames(int count, long elapsedMs) {
-            if (statsGetterListener != null)
-                statsGetterListener.onDroppedFrames(count, elapsedMs);
+            if (videoRendererListener != null)
+                videoRendererListener.onDroppedFrames(count, elapsedMs);
         }
 
         @Override

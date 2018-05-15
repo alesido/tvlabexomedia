@@ -172,6 +172,10 @@ public class ListenerMux implements ExoPlayerListener, MediaPlayer.OnPreparedLis
         }
     }
 
+    public void onVideoDecoderInitialized(String decoderName) {
+        healthMonitor.onVideoDecoderInitialized(decoderName);
+    }
+
     @Override
     public void onVideoSizeChanged(int width, int height, int unAppliedRotationDegrees, float pixelWidthHeightRatio) {
         muxNotifier.onVideoSizeChanged(width, height, unAppliedRotationDegrees, pixelWidthHeightRatio);
@@ -198,6 +202,22 @@ public class ListenerMux implements ExoPlayerListener, MediaPlayer.OnPreparedLis
     public void onDroppedFrames(int count, long elapsedMs) {
         if (healthMonitor != null) {
             healthMonitor.onDroppedFrames(count, elapsedMs);
+        }
+    }
+
+    /** alsi++
+     */
+    public void onStreamFormatRecognized(String mediaSourceClassName) {
+        if (healthMonitor != null) {
+            healthMonitor.onStreamFormatRecognized(mediaSourceClassName);
+        }
+    }
+
+    /** alsi++
+     */
+    public void onPlaybackStateChangeReport(String reportText) {
+        if (healthMonitor != null) {
+            healthMonitor.onPlaybackStateChangeReport(reportText);
         }
     }
 
@@ -340,7 +360,6 @@ public class ListenerMux implements ExoPlayerListener, MediaPlayer.OnPreparedLis
             }
         });
     }
-
 
     public static abstract class Notifier {
         public void onSeekComplete() {
