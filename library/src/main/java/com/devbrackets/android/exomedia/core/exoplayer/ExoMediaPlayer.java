@@ -134,6 +134,9 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
     private ExoPlayerStateReportListener playerStateReportListener;
     private ExoPlayerStateReportHelper playerStateReportHelper;
 
+    // alsi++
+    private Player.EventListener externalPlayerEventListener;
+
     @Nullable
     private CaptionListener captionListener;
     @Nullable
@@ -271,6 +274,10 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
                 playerStateReportListener = null;
             }
         }
+    }
+
+    public void addPlayerEventListener(Player.EventListener listener) {
+        player.addListener(listener);
     }
 
     public void setSurface(@Nullable Surface surface) {

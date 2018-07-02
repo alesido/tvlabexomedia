@@ -43,6 +43,7 @@ import com.devbrackets.android.exomedia.ExoMedia;
 import com.devbrackets.android.exomedia.R;
 import com.devbrackets.android.exomedia.core.HealthMonitor;
 import com.devbrackets.android.exomedia.core.ListenerMux;
+import com.devbrackets.android.exomedia.core.PlayerStateListener;
 import com.devbrackets.android.exomedia.core.api.VideoViewApi;
 import com.devbrackets.android.exomedia.core.exoplayer.ExoMediaPlayer;
 import com.devbrackets.android.exomedia.core.listener.MetadataListener;
@@ -699,8 +700,12 @@ public class VideoView extends RelativeLayout {
         muxNotifier.videoSizeChangedListener = listener;
     }
 
-    public void setHealthMonitor(HealthMonitor healthMonitor) {
+    public void setHealthMonitor(@Nullable HealthMonitor healthMonitor) {
         listenerMux.setHealthMonitor(healthMonitor);
+    }
+
+    public void setPlayerStateListener(@Nullable PlayerStateListener playerStateListener) {
+        listenerMux.setPlayerStateListener(playerStateListener);
     }
 
     /**

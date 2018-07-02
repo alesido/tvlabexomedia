@@ -31,12 +31,17 @@ import com.devbrackets.android.exomedia.core.exoplayer.ExoPlayerStateReportListe
 import com.devbrackets.android.exomedia.core.listener.MetadataListener;
 import com.devbrackets.android.exomedia.core.video.ClearableSurface;
 import com.devbrackets.android.exomedia.listener.OnBufferUpdateListener;
+import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.Format;
+import com.google.android.exoplayer2.PlaybackParameters;
+import com.google.android.exoplayer2.Player;
+import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.decoder.DecoderCounters;
 import com.google.android.exoplayer2.drm.MediaDrmCallback;
 import com.google.android.exoplayer2.metadata.Metadata;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
+import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.upstream.BandwidthMeter;
 import com.google.android.exoplayer2.video.VideoRendererEventListener;
 
@@ -223,10 +228,12 @@ public class ExoVideoDelegate {
         exoMediaPlayer.setBandwidthMeterListener(internalListeners);
         exoMediaPlayer.setVideoRendererListener(internalListeners);
         exoMediaPlayer.setPlayerStateReportListener(internalListeners);
+        exoMediaPlayer.addPlayerEventListener(internalListeners);
     }
 
     protected class InternalListeners implements MetadataListener, OnBufferUpdateListener,
-            BandwidthMeter.EventListener, VideoRendererEventListener, ExoPlayerStateReportListener {
+            BandwidthMeter.EventListener, VideoRendererEventListener, ExoPlayerStateReportListener,
+            Player.EventListener {
         @Override
         public void onMetadata(Metadata metadata) {
             listenerMux.onMetadata(metadata);
@@ -291,5 +298,60 @@ public class ExoVideoDelegate {
             if (listenerMux != null)
                 listenerMux.onPlaybackStateChangeReport(reportText);
         }
+
+        // region Player Event Listener
+
+        @Override
+        public void onTimelineChanged(Timeline timeline, Object manifest) {
+            // reserved for possible future implementation
+        }
+
+        @Override
+        public void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {
+            // reserved for possible future implementation
+        }
+
+        @Override
+        public void onLoadingChanged(boolean isLoading) {
+            // reserved for possible future implementation
+        }
+
+        @Override
+        public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
+            if (listenerMux != null)
+                listenerMux.onPlayerStateChanged(playbackState);
+        }
+
+        @Override
+        public void onRepeatModeChanged(int repeatMode) {
+            // reserved for possible future implementation
+        }
+
+        @Override
+        public void onShuffleModeEnabledChanged(boolean shuffleModeEnabled) {
+            // reserved for possible future implementation
+        }
+
+        @Override
+        public void onPlayerError(ExoPlaybackException error) {
+            // reserved for possible future implementation
+        }
+
+        @Override
+        public void onPositionDiscontinuity(int reason) {
+            // reserved for possible future implementation
+        }
+
+        @Override
+        public void onPlaybackParametersChanged(PlaybackParameters playbackParameters) {
+            // reserved for possible future implementation
+        }
+
+        @Override
+        public void onSeekProcessed() {
+            // reserved for possible future implementation
+        }
+
+        // endregion
     }
 }

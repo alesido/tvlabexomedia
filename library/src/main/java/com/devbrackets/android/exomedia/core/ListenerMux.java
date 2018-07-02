@@ -67,6 +67,8 @@ public class ListenerMux implements ExoPlayerListener, MediaPlayer.OnPreparedLis
     private MetadataListener metadataListener;
     @Nullable
     private HealthMonitor healthMonitor;
+    @Nullable
+    private PlayerStateListener playerStateListener;
 
     @NonNull
     private WeakReference<ClearableSurface> clearableSurfaceRef = new WeakReference<>(null);
@@ -222,6 +224,14 @@ public class ListenerMux implements ExoPlayerListener, MediaPlayer.OnPreparedLis
     }
 
     /**
+     * @param playbackState
+     */
+    public void onPlayerStateChanged(int playbackState) {
+        if (playerStateListener != null)
+            playerStateListener.onPlayerStateChanged(playbackState);
+    }
+
+    /**
      * Specifies the surface to clear when the playback reaches an appropriate state.
      * Once the <code>clearableSurface</code> is cleared, the reference will be removed
      *
@@ -290,6 +300,12 @@ public class ListenerMux implements ExoPlayerListener, MediaPlayer.OnPreparedLis
      */
     public void setHealthMonitor(@Nullable HealthMonitor healthMonitor) {
         this.healthMonitor = healthMonitor;
+    }
+
+    /** alsi++
+     */
+    public void setPlayerStateListener(@Nullable PlayerStateListener playerStateListener) {
+        this.playerStateListener = playerStateListener;
     }
 
     /**
