@@ -3,6 +3,7 @@ package com.devbrackets.android.exomedia.core;
 import android.support.annotation.IntRange;
 
 import com.google.android.exoplayer2.Format;
+import com.google.android.exoplayer2.decoder.DecoderCounters;
 
 /**
  * Created on 5/10/18.
@@ -19,7 +20,7 @@ public interface HealthMonitor
 
     void onStreamFormatRecognized(String mediaSourceClassName);
 
-    void onPlaybackStateChangeReport(String reportText);
+    void onPlaybackStateChangeReport(String reportText, DecoderCounters... counters);
 
     void onVideoDecoderInitialized(String decoderName);
 }

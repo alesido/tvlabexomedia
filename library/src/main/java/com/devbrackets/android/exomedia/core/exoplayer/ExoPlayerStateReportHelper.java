@@ -90,7 +90,8 @@ public final class ExoPlayerStateReportHelper extends Player.DefaultEventListene
     {
         reportListener.onPlaybackStateChangeReport(
                 getPlayerStateString() + getPlayerWindowIndexString()
-                        + getVideoString() + getAudioString());
+                        + getVideoString() + getAudioString(),
+                videoDecoderCounters, audioDecoderCounters);
 
         messageHandler.postDelayed(new Runnable() {
             @Override

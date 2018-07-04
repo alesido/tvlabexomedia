@@ -34,6 +34,7 @@ import com.devbrackets.android.exomedia.listener.OnPreparedListener;
 import com.devbrackets.android.exomedia.listener.OnSeekCompletionListener;
 import com.google.android.exoplayer2.Format;
 import com.google.android.exoplayer2.Player;
+import com.google.android.exoplayer2.decoder.DecoderCounters;
 import com.google.android.exoplayer2.metadata.Metadata;
 
 import java.lang.ref.WeakReference;
@@ -217,9 +218,9 @@ public class ListenerMux implements ExoPlayerListener, MediaPlayer.OnPreparedLis
 
     /** alsi++
      */
-    public void onPlaybackStateChangeReport(String reportText) {
+    public void onPlaybackStateChangeReport(String reportText, DecoderCounters... counters) {
         if (healthMonitor != null) {
-            healthMonitor.onPlaybackStateChangeReport(reportText);
+            healthMonitor.onPlaybackStateChangeReport(reportText, counters);
         }
     }
 

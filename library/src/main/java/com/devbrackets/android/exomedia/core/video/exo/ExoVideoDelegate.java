@@ -294,9 +294,9 @@ public class ExoVideoDelegate {
                 listenerMux.onStreamFormatRecognized(mediaSourceClassName);
         }
 
-        public void onPlaybackStateChangeReport(String reportText) {
+        public void onPlaybackStateChangeReport(String reportText, DecoderCounters ... counters) {
             if (listenerMux != null)
-                listenerMux.onPlaybackStateChangeReport(reportText);
+                listenerMux.onPlaybackStateChangeReport(reportText, counters);
         }
 
         // region Player Event Listener
