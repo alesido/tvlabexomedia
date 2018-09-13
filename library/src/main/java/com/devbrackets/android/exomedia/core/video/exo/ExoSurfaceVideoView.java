@@ -70,6 +70,11 @@ public class ExoSurfaceVideoView extends ResizingSurfaceView implements VideoVie
     }
 
     @Override
+    public void setVideoAndSubtitlesUri(Uri videoUri, Uri subtitlesUri) {
+        delegate.setVideoAndSubtitlesUri(videoUri, subtitlesUri);
+    }
+
+    @Override
     public void setVideoUri(@Nullable Uri uri, @Nullable MediaSource mediaSource) {
         delegate.setVideoUri(uri, mediaSource);
     }

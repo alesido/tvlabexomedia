@@ -143,6 +143,11 @@ public class NativeTextureVideoView extends ResizingTextureView implements Nativ
     }
 
     @Override
+    public void setVideoAndSubtitlesUri(Uri videoUri, Uri subtitlesUri) {
+        throw new RuntimeException("Not Implemented");
+    }
+
+    @Override
     public void setVideoUri(@Nullable Uri uri, @Nullable MediaSource mediaSource) {
         setVideoURI(uri);
     }

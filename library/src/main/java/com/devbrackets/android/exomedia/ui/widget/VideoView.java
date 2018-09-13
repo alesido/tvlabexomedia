@@ -46,6 +46,7 @@ import com.devbrackets.android.exomedia.core.ListenerMux;
 import com.devbrackets.android.exomedia.core.PlayerStateListener;
 import com.devbrackets.android.exomedia.core.api.VideoViewApi;
 import com.devbrackets.android.exomedia.core.exoplayer.ExoMediaPlayer;
+import com.devbrackets.android.exomedia.core.listener.CaptionListener;
 import com.devbrackets.android.exomedia.core.listener.MetadataListener;
 import com.devbrackets.android.exomedia.core.video.exo.ExoTextureVideoView;
 import com.devbrackets.android.exomedia.core.video.mp.NativeTextureVideoView;
@@ -289,6 +290,15 @@ public class VideoView extends RelativeLayout {
     public void setVideoURI(@Nullable Uri uri) {
         videoUri = uri;
         videoViewImpl.setVideoUri(uri);
+
+        if (videoControls != null) {
+            videoControls.showLoading(true);
+        }
+    }
+
+    public void setVideoAndSubtitlesURI(@Nullable Uri videoUri, @Nullable Uri subtitlesUri) {
+        this.videoUri = videoUri;
+        videoViewImpl.setVideoAndSubtitlesUri(videoUri, subtitlesUri);
 
         if (videoControls != null) {
             videoControls.showLoading(true);
@@ -680,6 +690,10 @@ public class VideoView extends RelativeLayout {
      */
     public void setOnErrorListener(@Nullable OnErrorListener listener) {
         listenerMux.setOnErrorListener(listener);
+    }
+
+    public void setCaptionListener(@Nullable CaptionListener listener) {
+        listenerMux.setCaptionListener(listener);
     }
 
     /**

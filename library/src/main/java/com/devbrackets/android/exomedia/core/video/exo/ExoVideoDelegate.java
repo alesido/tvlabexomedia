@@ -28,6 +28,7 @@ import com.devbrackets.android.exomedia.ExoMedia;
 import com.devbrackets.android.exomedia.core.ListenerMux;
 import com.devbrackets.android.exomedia.core.exoplayer.ExoMediaPlayer;
 import com.devbrackets.android.exomedia.core.exoplayer.ExoPlayerStateReportListener;
+import com.devbrackets.android.exomedia.core.listener.CaptionListener;
 import com.devbrackets.android.exomedia.core.listener.MetadataListener;
 import com.devbrackets.android.exomedia.core.video.ClearableSurface;
 import com.devbrackets.android.exomedia.listener.OnBufferUpdateListener;
@@ -41,10 +42,12 @@ import com.google.android.exoplayer2.drm.MediaDrmCallback;
 import com.google.android.exoplayer2.metadata.Metadata;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
+import com.google.android.exoplayer2.text.Cue;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.upstream.BandwidthMeter;
 import com.google.android.exoplayer2.video.VideoRendererEventListener;
 
+import java.util.List;
 import java.util.Map;
 
 public class ExoVideoDelegate {
@@ -68,6 +71,10 @@ public class ExoVideoDelegate {
 
     public void setVideoUri(@Nullable Uri uri) {
         setVideoUri(uri, null);
+    }
+
+    public void setVideoAndSubtitlesUri(Uri videoUri, Uri subtitlesUri) {
+        exoMediaPlayer.setVideoAndSubtitlesUri(videoUri, subtitlesUri);
     }
 
     public void setVideoUri(@Nullable Uri uri, @Nullable MediaSource mediaSource) {
@@ -229,11 +236,23 @@ public class ExoVideoDelegate {
         exoMediaPlayer.setVideoRendererListener(internalListeners);
         exoMediaPlayer.setPlayerStateReportListener(internalListeners);
         exoMediaPlayer.addPlayerEventListener(internalListeners);
+
+        // als+++
+        exoMediaPlayer.setCaptionListener(internalListeners);
     }
 
-    protected class InternalListeners implements MetadataListener, OnBufferUpdateListener,
+    protected class InternalListeners implements CaptionListener, MetadataListener, OnBufferUpdateListener,
             BandwidthMeter.EventListener, VideoRendererEventListener, ExoPlayerStateReportListener,
             Player.EventListener {
+
+        /** alsi+++ Caption listener callback
+         */
+        @Override
+        public void onCues(List<Cue> cues) {
+            if (listenerMux != null)
+                listenerMux.onCues(cues);
+        }
+
         @Override
         public void onMetadata(Metadata metadata) {
             listenerMux.onMetadata(metadata);

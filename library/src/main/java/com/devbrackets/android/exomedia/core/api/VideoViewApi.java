@@ -50,6 +50,8 @@ public interface VideoViewApi {
 
     void setVideoUri(@Nullable Uri uri);
 
+    void setVideoAndSubtitlesUri(Uri videoUri, Uri subtitlesUri);
+
     void setVideoUri(@Nullable Uri uri, @Nullable MediaSource mediaSource);
 
     /**

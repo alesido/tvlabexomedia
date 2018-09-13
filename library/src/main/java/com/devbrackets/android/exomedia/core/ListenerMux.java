@@ -24,6 +24,7 @@ import android.support.annotation.Nullable;
 
 import com.devbrackets.android.exomedia.core.exception.NativeMediaPlaybackException;
 import com.devbrackets.android.exomedia.core.exoplayer.ExoMediaPlayer;
+import com.devbrackets.android.exomedia.core.listener.CaptionListener;
 import com.devbrackets.android.exomedia.core.listener.ExoPlayerListener;
 import com.devbrackets.android.exomedia.core.listener.MetadataListener;
 import com.devbrackets.android.exomedia.core.video.ClearableSurface;
@@ -36,8 +37,10 @@ import com.google.android.exoplayer2.Format;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.decoder.DecoderCounters;
 import com.google.android.exoplayer2.metadata.Metadata;
+import com.google.android.exoplayer2.text.Cue;
 
 import java.lang.ref.WeakReference;
+import java.util.List;
 
 /**
  * An internal Listener that implements the listeners for the {@link ExoMediaPlayer},
@@ -64,6 +67,8 @@ public class ListenerMux implements ExoPlayerListener, MediaPlayer.OnPreparedLis
     private OnSeekCompletionListener seekCompletionListener;
     @Nullable
     private OnErrorListener errorListener;
+    @Nullable
+    private CaptionListener captionListener;
     @Nullable
     private MetadataListener metadataListener;
     @Nullable
@@ -165,6 +170,14 @@ public class ListenerMux implements ExoPlayerListener, MediaPlayer.OnPreparedLis
 
         if (healthMonitor != null) {
             healthMonitor.onBufferingUpdate(percent);
+        }
+    }
+
+    /** alsi+++
+     */
+    public void onCues(List<Cue> cues) {
+        if (captionListener != null) {
+            captionListener.onCues(cues);
         }
     }
 
@@ -286,6 +299,13 @@ public class ListenerMux implements ExoPlayerListener, MediaPlayer.OnPreparedLis
      */
     public void setOnErrorListener(@Nullable OnErrorListener listener) {
         errorListener = listener;
+    }
+
+    /** alsi+++
+     * ... to inform of subtitles (closed captions) update
+     */
+    public void setCaptionListener(@Nullable CaptionListener listener) {
+        captionListener = listener;
     }
 
     /**

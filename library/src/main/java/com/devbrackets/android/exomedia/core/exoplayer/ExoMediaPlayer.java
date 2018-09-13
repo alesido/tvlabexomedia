@@ -32,6 +32,7 @@ import android.support.v4.util.ArrayMap;
 import android.util.Log;
 import android.view.Surface;
 
+import com.devbrackets.android.exomedia.BuildConfig;
 import com.devbrackets.android.exomedia.ExoMedia;
 import com.devbrackets.android.exomedia.ExoMedia.RendererType;
 import com.devbrackets.android.exomedia.core.listener.CaptionListener;
@@ -64,6 +65,8 @@ import com.google.android.exoplayer2.drm.MediaDrmCallback;
 import com.google.android.exoplayer2.metadata.Metadata;
 import com.google.android.exoplayer2.metadata.MetadataOutput;
 import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.MergingMediaSource;
+import com.google.android.exoplayer2.source.SingleSampleMediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.text.Cue;
 import com.google.android.exoplayer2.text.TextOutput;
@@ -73,13 +76,17 @@ import com.google.android.exoplayer2.trackselection.FixedTrackSelection;
 import com.google.android.exoplayer2.trackselection.MappingTrackSelector;
 import com.google.android.exoplayer2.trackselection.TrackSelection;
 import com.google.android.exoplayer2.upstream.BandwidthMeter;
+import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
+import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
+import com.google.android.exoplayer2.util.MimeTypes;
 import com.google.android.exoplayer2.util.Util;
 import com.google.android.exoplayer2.video.VideoRendererEventListener;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -211,6 +218,27 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
 
     public void setUri(@Nullable Uri uri) {
         setMediaSource(uri != null ? mediaSourceProvider.generate(context, mainHandler, uri, bandwidthMeter) : null);
+    }
+
+    public void setVideoAndSubtitlesUri(@Nullable Uri videoUri, @Nullable Uri subtitlesUri) {
+        if ( null == videoUri || null == subtitlesUri) {
+            setUri(videoUri);
+            return;
+        }
+
+        MediaSource videoSource = mediaSourceProvider.generate(context, mainHandler, videoUri, bandwidthMeter);
+
+        Format subtitleFormat = Format.createTextSampleFormat(null, MimeTypes.APPLICATION_SUBRIP,
+                null, Format.NO_VALUE, Format.NO_VALUE, "en", null,
+                Format.OFFSET_SAMPLE_RELATIVE);
+
+//        Format subtitleFormat = Format.createTextSampleFormat(null, MimeTypes.APPLICATION_SUBRIP, SELECTION_FLAG_FORCED, null);
+
+        String userAgent = String.format(Locale.US, "ExoMedia %s (%d) / Android %s / %s", BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE, Build.VERSION.RELEASE, Build.MODEL);
+        DataSource.Factory dataSourceFactory = new DefaultDataSourceFactory(context, userAgent);
+        MediaSource subtitleSource = new SingleSampleMediaSource(subtitlesUri, dataSourceFactory, subtitleFormat, C.TIME_UNSET);
+
+        setMediaSource(new MergingMediaSource(videoSource, subtitleSource));
     }
 
     public void setMediaSource(@Nullable MediaSource source) {
