@@ -74,6 +74,7 @@ public class ExoVideoDelegate {
     }
 
     public void setVideoAndSubtitlesUri(Uri videoUri, Uri subtitlesUri) {
+        setVideoUri(videoUri, null);
         exoMediaPlayer.setVideoAndSubtitlesUri(videoUri, subtitlesUri);
     }
 
