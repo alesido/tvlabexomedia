@@ -1,6 +1,7 @@
 apply plugin: 'com.android.library'
 apply plugin: 'maven'
-apply plugin: 'com.novoda.bintray-release'
+//apply plugin: 'com.novoda.bintray-release'
+apply plugin: "guru.stefma.bintrayrelease"
 
 def versionMajor = 4
 def versionMinor = 1
@@ -22,11 +23,11 @@ dependencies {
 }
 
 android {
-    compileSdkVersion 27
+    compileSdkVersion 28
 
     defaultConfig {
         minSdkVersion 14
-        targetSdkVersion 27
+        targetSdkVersion 28
 
         versionCode versionMajor * 10000 + versionMinor * 1000 + versionPatch * 100
         versionName "${versionMajor}.${versionMinor}.${versionPatch}"
@@ -60,11 +61,20 @@ uploadArchives {
 }
 
 // ======= BINTRAY DEPLOY (command: $ ./gradlew clean build bintrayUpload -PbintrayUser=BINTRAY_USERNAME -PbintrayKey=BINTRAY_KEY -PdryRun=false) ====
+//publish {
+//    groupId = libraryGroupId
+//    artifactId = libraryBaseName
+//    uploadName = 'ExoMedia'
+//    version = libraryVersion
+//    autoPublish = false
+//    dryRun = false
+//}
+
+version = "1.0.0"
+group = "guru.stefma.bintrayrelease"
 publish {
-    groupId = libraryGroupId
-    artifactId = libraryBaseName
-    uploadName = 'ExoMedia'
-    version = libraryVersion
-    autoPublish = false
-    dryRun = false
+    userOrg = 'stefma'
+    artifactId = 'bintrayrelease'
+    desc = 'Oh hi, this is a nice description for a project, right?'
+    website = 'https://github.com/stefma/bintray-release'
 }
