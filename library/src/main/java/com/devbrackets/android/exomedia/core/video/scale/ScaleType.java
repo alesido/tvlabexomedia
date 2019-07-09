@@ -1,6 +1,6 @@
 package com.devbrackets.android.exomedia.core.video.scale;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 /**
  * See {@link android.widget.ImageView.ScaleType} for a description

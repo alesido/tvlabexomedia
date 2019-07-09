@@ -19,9 +19,6 @@ package com.devbrackets.android.exomedia;
 import android.content.Context;
 import android.media.AudioManager;
 import android.net.Uri;
-import android.support.annotation.FloatRange;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 
 import com.devbrackets.android.exomedia.core.ListenerMux;
 import com.devbrackets.android.exomedia.core.api.AudioPlayerApi;
@@ -40,6 +37,10 @@ import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
 
 import java.util.Map;
+
+import androidx.annotation.FloatRange;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 /**
  * An AudioPlayer that uses the ExoPlayer as the backing architecture.  If the current device

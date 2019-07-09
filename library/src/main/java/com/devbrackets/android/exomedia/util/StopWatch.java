@@ -19,7 +19,7 @@ package com.devbrackets.android.exomedia.util;
 
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 /**
  * A simple stopwatch to keep a correct and updated record of the running duration

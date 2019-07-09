@@ -24,12 +24,12 @@ import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
-import android.support.annotation.DrawableRes;
-import android.support.annotation.FloatRange;
-import android.support.annotation.IntRange;
-import android.support.annotation.LayoutRes;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.DrawableRes;
+import androidx.annotation.FloatRange;
+import androidx.annotation.IntRange;
+import androidx.annotation.LayoutRes;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -53,6 +53,7 @@ import com.devbrackets.android.exomedia.core.video.mp.NativeTextureVideoView;
 import com.devbrackets.android.exomedia.core.video.scale.ScaleType;
 import com.devbrackets.android.exomedia.listener.OnBufferUpdateListener;
 import com.devbrackets.android.exomedia.listener.OnCompletionListener;
+import com.devbrackets.android.exomedia.listener.OnEarlyCompletionListener;
 import com.devbrackets.android.exomedia.listener.OnErrorListener;
 import com.devbrackets.android.exomedia.listener.OnPreparedListener;
 import com.devbrackets.android.exomedia.listener.OnSeekCompletionListener;
@@ -74,7 +75,7 @@ import java.util.Map;
  * To an external user this view should have the same APIs used with the standard VideoView
  * to help with quick implementations.
  */
-@SuppressWarnings("UnusedDeclaration")
+@SuppressWarnings({"UnusedDeclaration", "JavadocReference"})
 public class VideoView extends RelativeLayout {
     private static final String TAG = VideoView.class.getSimpleName();
 
@@ -663,6 +664,15 @@ public class VideoView extends RelativeLayout {
      */
     public void setOnCompletionListener(@Nullable OnCompletionListener listener) {
         listenerMux.setOnCompletionListener(listener);
+    }
+
+    /**
+     * Sets the listener to inform of VideoPlayer on "early" completion (before the full duration reached)
+     *
+     * @param listener The listener
+     */
+    public void setOnEarlyCompletionListener(@Nullable OnEarlyCompletionListener listener) {
+        listenerMux.setOnEarlyCompletionListener(listener);
     }
 
     /**

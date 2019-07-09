@@ -1,6 +1,6 @@
 package com.devbrackets.android.exomedia.core;
 
-import android.support.annotation.IntRange;
+import androidx.annotation.IntRange;
 
 import com.google.android.exoplayer2.Format;
 import com.google.android.exoplayer2.decoder.DecoderCounters;

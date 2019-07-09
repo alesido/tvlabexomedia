@@ -18,9 +18,9 @@ package com.devbrackets.android.exomedia.core;
 
 import android.media.MediaPlayer;
 import android.os.Handler;
-import android.support.annotation.IntRange;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.devbrackets.android.exomedia.core.exception.NativeMediaPlaybackException;
 import com.devbrackets.android.exomedia.core.exoplayer.ExoMediaPlayer;
@@ -30,6 +30,7 @@ import com.devbrackets.android.exomedia.core.listener.MetadataListener;
 import com.devbrackets.android.exomedia.core.video.ClearableSurface;
 import com.devbrackets.android.exomedia.listener.OnBufferUpdateListener;
 import com.devbrackets.android.exomedia.listener.OnCompletionListener;
+import com.devbrackets.android.exomedia.listener.OnEarlyCompletionListener;
 import com.devbrackets.android.exomedia.listener.OnErrorListener;
 import com.devbrackets.android.exomedia.listener.OnPreparedListener;
 import com.devbrackets.android.exomedia.listener.OnSeekCompletionListener;
@@ -61,6 +62,8 @@ public class ListenerMux implements ExoPlayerListener, MediaPlayer.OnPreparedLis
     private OnPreparedListener preparedListener;
     @Nullable
     private OnCompletionListener completionListener;
+    @Nullable
+    private OnEarlyCompletionListener earlyCompletionListener;
     @Nullable
     private OnBufferUpdateListener bufferUpdateListener;
     @Nullable
@@ -275,6 +278,15 @@ public class ListenerMux implements ExoPlayerListener, MediaPlayer.OnPreparedLis
     }
 
     /**
+     * Sets the listener to inform on early (before real/expected) video playback completion
+     *
+     * @param listener The listener to inform
+     */
+    public void setOnEarlyCompletionListener(@Nullable OnEarlyCompletionListener listener) {
+        earlyCompletionListener = listener;
+    }
+
+    /**
      * Sets the listener to inform of buffering updates
      *
      * @param listener The listener to inform
@@ -383,6 +395,8 @@ public class ListenerMux implements ExoPlayerListener, MediaPlayer.OnPreparedLis
 
     private void notifyCompletionListener() {
         if (!muxNotifier.shouldNotifyCompletion(COMPLETED_DURATION_LEEWAY)) {
+            if (earlyCompletionListener != null)
+                earlyCompletionListener.OnEarlyCompletion();
             return;
         }
 

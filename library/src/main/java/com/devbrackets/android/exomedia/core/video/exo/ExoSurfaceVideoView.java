@@ -20,9 +20,9 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Build;
-import android.support.annotation.FloatRange;
-import android.support.annotation.IntRange;
-import android.support.annotation.Nullable;
+import androidx.annotation.FloatRange;
+import androidx.annotation.IntRange;
+import androidx.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.SurfaceHolder;
 
@@ -97,6 +97,11 @@ public class ExoSurfaceVideoView extends ResizingSurfaceView implements VideoVie
     @Override
     public void seekTo(@IntRange(from = 0) long milliseconds) {
         delegate.seekTo(milliseconds);
+    }
+
+    @Override
+    public Boolean isMediaSeekable() {
+        return null;
     }
 
     @Override
