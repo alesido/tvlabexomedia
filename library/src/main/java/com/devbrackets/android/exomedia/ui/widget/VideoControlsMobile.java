@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Brian Wernick
+ * Copyright (C) 2015 - 2017 ExoMedia Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,7 +86,8 @@ public class VideoControlsMobile extends VideoControls {
         if (!userInteracting) {
             seekBar.setSecondaryProgress((int) (seekBar.getMax() * ((float)bufferPercent / 100)));
             seekBar.setProgress((int) position);
-            currentTimeTextView.setText(TimeFormatUtil.formatMs(position));
+
+            updateCurrentTime(position);
         }
     }
 

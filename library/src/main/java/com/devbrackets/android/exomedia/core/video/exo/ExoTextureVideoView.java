@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Brian Wernick
+ * Copyright (C) 2016 - 2018 ExoMedia Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import android.net.Uri;
 import android.os.Build;
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.Surface;
@@ -30,7 +31,10 @@ import android.view.Surface;
 import com.devbrackets.android.exomedia.ExoMedia;
 import com.devbrackets.android.exomedia.core.ListenerMux;
 import com.devbrackets.android.exomedia.core.api.VideoViewApi;
+import com.devbrackets.android.exomedia.core.exoplayer.WindowInfo;
+import com.devbrackets.android.exomedia.core.listener.CaptionListener;
 import com.devbrackets.android.exomedia.core.video.ResizingTextureView;
+import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.drm.MediaDrmCallback;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
@@ -91,6 +95,11 @@ public class ExoTextureVideoView extends ResizingTextureView implements VideoVie
     }
 
     @Override
+    public float getVolume() {
+        return delegate.getVolume();
+    }
+
+    @Override
     public boolean setVolume(@FloatRange(from = 0.0, to = 1.0) float volume) {
         return delegate.setVolume(volume);
     }
@@ -145,9 +154,25 @@ public class ExoTextureVideoView extends ResizingTextureView implements VideoVie
         return delegate.getBufferedPercent();
     }
 
+    @Nullable
+    @Override
+    public WindowInfo getWindowInfo() {
+        return delegate.getWindowInfo();
+    }
+
     @Override
     public boolean setPlaybackSpeed(float speed) {
         return delegate.setPlaybackSpeed(speed);
+    }
+
+    @Override
+    public float getPlaybackSpeed() {
+        return delegate.getPlaybackSpeed();
+    }
+
+    @Override
+    public void setCaptionListener(@Nullable CaptionListener listener) {
+        delegate.setCaptionListener(listener);
     }
 
     @Override
@@ -156,14 +181,40 @@ public class ExoTextureVideoView extends ResizingTextureView implements VideoVie
     }
 
     @Override
-    public void setTrack(ExoMedia.RendererType trackType, int trackIndex) {
+    public void setTrack(@NonNull ExoMedia.RendererType trackType, int trackIndex) {
         delegate.setTrack(trackType, trackIndex);
+    }
+
+    @Override
+    public void setTrack(@NonNull ExoMedia.RendererType type, int groupIndex, int trackIndex) {
+        delegate.setTrack(type, groupIndex, trackIndex);
+    }
+
+    @Override
+    public int getSelectedTrackIndex(@NonNull ExoMedia.RendererType type, int groupIndex) {
+        return delegate.getSelectedTrackIndex(type, groupIndex);
+    }
+
+    @Override
+    public void clearSelectedTracks(@NonNull ExoMedia.RendererType type) {
+        delegate.clearSelectedTracks(type);
+
     }
 
     @Nullable
     @Override
     public Map<ExoMedia.RendererType, TrackGroupArray> getAvailableTracks() {
         return delegate.getAvailableTracks();
+    }
+
+    @Override
+    public void setRendererEnabled(@NonNull ExoMedia.RendererType type, boolean enabled) {
+        delegate.setRendererEnabled(type, enabled);
+    }
+
+    @Override
+    public boolean isRendererEnabled(@NonNull ExoMedia.RendererType type) {
+        return delegate.isRendererEnabled(type);
     }
 
     @Override
@@ -177,10 +228,15 @@ public class ExoTextureVideoView extends ResizingTextureView implements VideoVie
     }
 
     @Override
-    public void onVideoSizeChanged(int width, int height) {
-        if (updateVideoSize(width, height)) {
+    public void onVideoSizeChanged(int width, int height, float pixelWidthHeightRatio) {
+        if (updateVideoSize((int) (width * pixelWidthHeightRatio), height)) {
             requestLayout();
         }
+    }
+
+    @Override
+    public void setRepeatMode(@Player.RepeatMode int repeatMode) {
+        delegate.setRepeatMode(repeatMode);
     }
 
     protected void setup() {

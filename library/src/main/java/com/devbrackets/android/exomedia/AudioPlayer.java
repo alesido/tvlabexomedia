@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Brian Wernick
+ * Copyright (C) 2016 - 2018 ExoMedia Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.devbrackets.android.exomedia.core.api.AudioPlayerApi;
 import com.devbrackets.android.exomedia.core.audio.ExoAudioPlayer;
 import com.devbrackets.android.exomedia.core.audio.NativeAudioPlayer;
 import com.devbrackets.android.exomedia.core.exoplayer.ExoMediaPlayer;
+import com.devbrackets.android.exomedia.core.exoplayer.WindowInfo;
 import com.devbrackets.android.exomedia.core.listener.MetadataListener;
 import com.devbrackets.android.exomedia.listener.OnBufferUpdateListener;
 import com.devbrackets.android.exomedia.listener.OnCompletionListener;
@@ -32,6 +33,8 @@ import com.devbrackets.android.exomedia.listener.OnErrorListener;
 import com.devbrackets.android.exomedia.listener.OnPreparedListener;
 import com.devbrackets.android.exomedia.listener.OnSeekCompletionListener;
 import com.devbrackets.android.exomedia.util.DeviceUtil;
+import com.google.android.exoplayer2.Player;
+import com.google.android.exoplayer2.analytics.AnalyticsListener;
 import com.google.android.exoplayer2.drm.MediaDrmCallback;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
@@ -88,6 +91,16 @@ public class AudioPlayer {
     }
 
     /**
+     * Sets the repeat mode for this MediaPlayer.
+     * <b>Note:</b> This will only change the ExoPlayer implementation
+     *
+     * @param repeatMode The repeat mode to use
+     */
+    public void setRepeatMode(@Player.RepeatMode int repeatMode) {
+        audioPlayerImpl.setRepeatMode(repeatMode);
+    }
+
+    /**
      * Sets the playback speed for this MediaPlayer.
      *
      * @param speed The speed to play the media back at
@@ -95,6 +108,15 @@ public class AudioPlayer {
      */
     public boolean setPlaybackSpeed(float speed) {
         return audioPlayerImpl.setPlaybackSpeed(speed);
+    }
+
+    /**
+     * Retrieves the current speed the media is playing at.
+     *
+     * @return The current playback speed
+     */
+    public float getPlaybackSpeed() {
+        return audioPlayerImpl.getPlaybackSpeed();
     }
 
     /**
@@ -154,6 +176,26 @@ public class AudioPlayer {
     }
 
     /**
+     * Retrieves the current left volume
+     *
+     * @return the volume for the left channel
+     */
+    @FloatRange(from = 0.0, to = 1.0)
+    public float getVolumeLeft() {
+        return audioPlayerImpl.getVolumeLeft();
+    }
+
+    /**
+     * Retrieves the current right volume
+     *
+     * @return the volume for the right channel
+     */
+    @FloatRange(from = 0.0, to = 1.0)
+    float getVolumeRight() {
+        return audioPlayerImpl.getVolumeRight();
+    }
+
+    /**
      * Sets the volume level for the audio playback.
      *
      * @param leftVolume The volume range [0.0 - 1.0]
@@ -165,7 +207,7 @@ public class AudioPlayer {
 
     /**
      * Set the low-level power management behavior for this AudioPlayer.
-     *
+     * <p>
      * <p>This function has the AudioPlayer access the low-level power manager
      * service to control the device's power usage while playing is occurring.
      * The parameter is a combination of {@link android.os.PowerManager} wake flags.
@@ -174,7 +216,7 @@ public class AudioPlayer {
      * By default, no attempt is made to keep the device awake during playback.
      *
      * @param context the Context to use
-     * @param mode    the power/wake mode to set
+     * @param mode the power/wake mode to set
      * @see android.os.PowerManager
      */
     public void setWakeMode(Context context, int mode) {
@@ -290,6 +332,18 @@ public class AudioPlayer {
     }
 
     /**
+     * Retrieves the information associated with the current {@link com.google.android.exoplayer2.Timeline.Window}
+     * used by the ExoPlayer backed implementation. When the {@link android.media.MediaPlayer} backed
+     * implementation is being used this will be null.
+     *
+     * @return The current Window information or null
+     */
+    @Nullable
+    public WindowInfo getWindowInfo() {
+        return audioPlayerImpl.getWindowInfo();
+    }
+
+    /**
      * Determines if the current video player implementation supports
      * track selection for audio or video tracks.
      *
@@ -305,9 +359,28 @@ public class AudioPlayer {
      *
      * @param trackType The type for the track to switch to the selected index
      * @param trackIndex The index for the track to switch to
+     * @deprecated Use {@link #setTrack(ExoMedia.RendererType, int, int)}
      */
+    @Deprecated
     public void setTrack(ExoMedia.RendererType trackType, int trackIndex) {
         audioPlayerImpl.setTrack(trackType, trackIndex);
+    }
+
+    /**
+     * Changes to the track with <code>trackIndex</code> for the specified
+     * <code>trackType</code>
+     *
+     * @param trackType The type for the track to switch to the selected index
+     * @param groupIndex The index for the group in the {@link TrackGroupArray} specified by the <code>trackType</code>
+     * @param trackIndex The index for the track to switch to
+     */
+    public void setTrack(ExoMedia.RendererType trackType, int groupIndex, int trackIndex) {
+        audioPlayerImpl.setTrack(trackType, groupIndex, trackIndex);
+    }
+
+
+    public int getSelectedTrackIndex(@NonNull ExoMedia.RendererType type, int groupIndex) {
+        return audioPlayerImpl.getSelectedTrackIndex(type, groupIndex);
     }
 
     /**
@@ -376,6 +449,15 @@ public class AudioPlayer {
     }
 
     /**
+     * Sets the listener to inform of Analytics updates
+     *
+     * @param listener The listener to inform
+     */
+    public void setAnalyticsListener(@Nullable AnalyticsListener listener) {
+        listenerMux.setAnalyticsListener(listener);
+    }
+
+    /**
      * Performs the functionality to stop the progress polling, and stop any other
      * procedures from running that we no longer need.
      */
@@ -402,7 +484,7 @@ public class AudioPlayer {
 
         @Override
         public void onMediaPlaybackEnded() {
-           onPlaybackEnded();
+            onPlaybackEnded();
         }
 
         @Override

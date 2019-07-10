@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Brian Wernick
+ * Copyright (C) 2015 - 2018 ExoMedia Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,7 +109,8 @@ public class VideoControlsLeanback extends VideoControls {
     public void updateProgress(@IntRange(from = 0) long position, @IntRange(from = 0) long duration, @IntRange(from = 0, to = 100) int bufferPercent) {
         progressBar.setSecondaryProgress((int) (progressBar.getMax() * ((float)bufferPercent / 100)));
         progressBar.setProgress((int) position);
-        currentTimeTextView.setText(TimeFormatUtil.formatMs(position));
+
+        updateCurrentTime(position);
     }
 
     @Override
@@ -193,12 +194,17 @@ public class VideoControlsLeanback extends VideoControls {
 
     @Override
     protected void updateButtonDrawables() {
-        super.updateButtonDrawables();
+        updateButtonDrawables(R.color.exomedia_default_controls_leanback_button_selector);
+    }
 
-        Drawable rewindDrawable = ResourceUtil.tintList(getContext(), R.drawable.exomedia_ic_rewind_white, R.color.exomedia_default_controls_button_selector);
+    @Override
+    protected void updateButtonDrawables(int tintList) {
+        super.updateButtonDrawables(tintList);
+
+        Drawable rewindDrawable = ResourceUtil.tintList(getContext(), R.drawable.exomedia_ic_rewind_white, tintList);
         rewindButton.setImageDrawable(rewindDrawable);
 
-        Drawable fastForwardDrawable = ResourceUtil.tintList(getContext(), R.drawable.exomedia_ic_fast_forward_white, R.color.exomedia_default_controls_button_selector);
+        Drawable fastForwardDrawable = ResourceUtil.tintList(getContext(), R.drawable.exomedia_ic_fast_forward_white, tintList);
         fastForwardButton.setImageDrawable(fastForwardDrawable);
     }
 
@@ -288,6 +294,7 @@ public class VideoControlsLeanback extends VideoControls {
      */
     protected void performSeek(long seekToTime) {
         if (seekListener == null || !seekListener.onSeekEnded(seekToTime)) {
+            show();
             internalListener.onSeekEnded(seekToTime);
         }
     }

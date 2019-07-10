@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2017 - 2018 ExoMedia Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.devbrackets.android.exomedia;
 
 import android.content.Context;
@@ -31,12 +47,12 @@ public class ExoMedia {
     @Deprecated
     public interface HttpDataSourceFactoryProvider {
         @NonNull
-        HttpDataSource.BaseFactory provide(@NonNull String userAgent, @Nullable TransferListener<? super DataSource> listener);
+        HttpDataSource.BaseFactory provide(@NonNull String userAgent, @Nullable TransferListener listener);
     }
 
     public interface DataSourceFactoryProvider {
         @NonNull
-        DataSource.Factory provide(@NonNull String userAgent, @Nullable TransferListener<? super DataSource> listener);
+        DataSource.Factory provide(@NonNull String userAgent, @Nullable TransferListener listener);
     }
 
     public enum RendererType {
@@ -121,6 +137,8 @@ public class ExoMedia {
         public static volatile DataSourceFactoryProvider dataSourceFactoryProvider;
         @Nullable
         public static volatile LoadControl loadControl;
+        @NonNull
+        public static volatile MediaSourceProvider mediaSourceProvider = new MediaSourceProvider();
 
         static {
             instantiateRendererClasses();
@@ -146,9 +164,9 @@ public class ExoMedia {
 
         private static void instantiateSourceProviders() {
             // Adds the HLS, SmoothStream, and MPEG Dash registrations
-            sourceTypeBuilders.add(new MediaSourceProvider.SourceTypeBuilder(new HlsMediaSourceBuilder(), ".m3u8", ".*m3u8.*"));
-            sourceTypeBuilders.add(new MediaSourceProvider.SourceTypeBuilder(new DashMediaSourceBuilder(), ".mpd", ".*mpd.*"));
-            sourceTypeBuilders.add(new MediaSourceProvider.SourceTypeBuilder(new SsMediaSourceBuilder(), ".ism", ".*ism.*"));
+            sourceTypeBuilders.add(new MediaSourceProvider.SourceTypeBuilder(new HlsMediaSourceBuilder(), null, ".m3u8", ".*\\.m3u8.*"));
+            sourceTypeBuilders.add(new MediaSourceProvider.SourceTypeBuilder(new DashMediaSourceBuilder(), null, ".mpd", ".*\\.mpd.*"));
+            sourceTypeBuilders.add(new MediaSourceProvider.SourceTypeBuilder(new SsMediaSourceBuilder(), null,".ism", ".*\\.ism.*"));
         }
     }
 }

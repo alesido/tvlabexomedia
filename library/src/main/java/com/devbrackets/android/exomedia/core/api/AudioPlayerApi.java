@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Brian Wernick
+ * Copyright (C) 2016 - 2018 ExoMedia Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,13 @@ import android.media.AudioManager;
 import android.net.Uri;
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.devbrackets.android.exomedia.ExoMedia;
 import com.devbrackets.android.exomedia.core.ListenerMux;
+import com.devbrackets.android.exomedia.core.exoplayer.WindowInfo;
+import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.drm.MediaDrmCallback;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
@@ -90,6 +93,9 @@ public interface AudioPlayerApi {
     @IntRange(from = 0, to = 100)
     int getBufferedPercent();
 
+    @Nullable
+    WindowInfo getWindowInfo();
+
     int getAudioSessionId();
 
     /**
@@ -99,6 +105,8 @@ public interface AudioPlayerApi {
      * @return True if the speed was set
      */
     boolean setPlaybackSpeed(float speed);
+
+    float getPlaybackSpeed();
 
     /**
      * Sets the audio stream type for this MediaPlayer. See {@link AudioManager}
@@ -113,7 +121,15 @@ public interface AudioPlayerApi {
 
     boolean trackSelectionAvailable();
 
-    void setTrack(ExoMedia.RendererType type, int trackIndex);
+    /**
+     * @deprecated use {@link #setTrack(ExoMedia.RendererType, int, int)}
+     */
+    @Deprecated
+    void setTrack(@NonNull ExoMedia.RendererType type, int trackIndex);
+
+    void setTrack(@NonNull ExoMedia.RendererType type, int groupIndex, int trackIndex);
+
+    int getSelectedTrackIndex(@NonNull ExoMedia.RendererType type, int groupIndex);
 
     /**
      * Retrieves a list of available tracks to select from.  Typically {@link #trackSelectionAvailable()}
@@ -124,13 +140,21 @@ public interface AudioPlayerApi {
     @Nullable
     Map<ExoMedia.RendererType, TrackGroupArray> getAvailableTracks();
 
+    @FloatRange(from = 0.0, to = 1.0)
+    float getVolumeLeft();
+
+    @FloatRange(from = 0.0, to = 1.0)
+    float getVolumeRight();
+
     void setVolume(@FloatRange(from = 0.0, to = 1.0) float left, @FloatRange(from = 0.0, to = 1.0) float right);
 
     void seekTo(@IntRange(from = 0) long milliseconds);
 
-    void setWakeMode(Context context, int mode);
+    void setWakeMode(@NonNull Context context, int mode);
 
     void setListenerMux(ListenerMux listenerMux);
 
     void onMediaPrepared();
+
+    void setRepeatMode(@Player.RepeatMode int repeatMode);
 }

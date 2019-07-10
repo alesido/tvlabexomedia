@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Brian Wernick
+ * Copyright (C) 2016 - 2018 ExoMedia Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,10 @@ import com.devbrackets.android.exomedia.ExoMedia;
 import com.devbrackets.android.exomedia.core.ListenerMux;
 import com.devbrackets.android.exomedia.core.api.AudioPlayerApi;
 import com.devbrackets.android.exomedia.core.exoplayer.ExoMediaPlayer;
+import com.devbrackets.android.exomedia.core.exoplayer.WindowInfo;
 import com.devbrackets.android.exomedia.core.listener.MetadataListener;
 import com.devbrackets.android.exomedia.listener.OnBufferUpdateListener;
+import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.drm.MediaDrmCallback;
 import com.google.android.exoplayer2.metadata.Metadata;
 import com.google.android.exoplayer2.source.MediaSource;
@@ -99,6 +101,16 @@ public class ExoAudioPlayer implements AudioPlayerApi {
     @Override
     public void reset() {
         //Purposefully left blank
+    }
+
+    @Override
+    public float getVolumeLeft() {
+        return exoMediaPlayer.getVolume();
+    }
+
+    @Override
+    public float getVolumeRight() {
+        return exoMediaPlayer.getVolume();
     }
 
     @Override
@@ -176,6 +188,12 @@ public class ExoAudioPlayer implements AudioPlayerApi {
         return exoMediaPlayer.getBufferedPercentage();
     }
 
+    @Nullable
+    @Override
+    public WindowInfo getWindowInfo() {
+        return exoMediaPlayer.getWindowInfo();
+    }
+
     @Override
     public void release() {
         exoMediaPlayer.release();
@@ -192,12 +210,17 @@ public class ExoAudioPlayer implements AudioPlayerApi {
     }
 
     @Override
+    public float getPlaybackSpeed() {
+        return exoMediaPlayer.getPlaybackSpeed();
+    }
+
+    @Override
     public void setAudioStreamType(int streamType) {
         exoMediaPlayer.setAudioStreamType(streamType);
     }
 
     @Override
-    public void setWakeMode(Context context, int mode) {
+    public void setWakeMode(@NonNull Context context, int mode) {
         exoMediaPlayer.setWakeMode(context, mode);
     }
 
@@ -207,8 +230,18 @@ public class ExoAudioPlayer implements AudioPlayerApi {
     }
 
     @Override
-    public void setTrack(ExoMedia.RendererType type, int trackIndex) {
+    public void setTrack(@NonNull ExoMedia.RendererType type, int trackIndex) {
         exoMediaPlayer.setSelectedTrack(type, trackIndex);
+    }
+
+    @Override
+    public void setTrack(@NonNull ExoMedia.RendererType type, int groupIndex, int trackIndex) {
+        exoMediaPlayer.setSelectedTrack(type, groupIndex, trackIndex);
+    }
+
+    @Override
+    public int getSelectedTrackIndex(@NonNull ExoMedia.RendererType type, int groupIndex) {
+        return exoMediaPlayer.getSelectedTrackIndex(type, groupIndex);
     }
 
     @Nullable
@@ -221,15 +254,22 @@ public class ExoAudioPlayer implements AudioPlayerApi {
     public void setListenerMux(ListenerMux listenerMux) {
         if (this.listenerMux != null) {
             exoMediaPlayer.removeListener(this.listenerMux);
+            exoMediaPlayer.removeAnalyticsListener(this.listenerMux);
         }
 
         this.listenerMux = listenerMux;
         exoMediaPlayer.addListener(listenerMux);
+        exoMediaPlayer.addAnalyticsListener(listenerMux);
     }
 
     @Override
     public void onMediaPrepared() {
         //Purposefully left blank
+    }
+
+    @Override
+    public void setRepeatMode(@Player.RepeatMode int repeatMode) {
+        exoMediaPlayer.setRepeatMode(repeatMode);
     }
 
     protected class InternalListeners implements MetadataListener, OnBufferUpdateListener {

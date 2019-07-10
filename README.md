@@ -25,7 +25,7 @@ repositories {
 }
 
 dependencies {
-    compile 'com.devbrackets.android:exomedia:4.1.0'
+    implementation 'com.devbrackets.android:exomedia:4.3.0'
 }
 ```
 
@@ -72,7 +72,7 @@ public void onPrepared() {
 
 License
 -------
-    Copyright 2015-2017 Brian Wernick
+    Copyright 2015-2018 ExoMedia Contributors
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -90,6 +90,7 @@ License
 Attribution
 -----------
 * Uses [AppCompat-v7](http://developer.android.com/tools/support-library/features.html#v7-appcompat) licensed under [Apache 2.0][Apache 2.0]
+* Uses [support-media-compat](https://developer.android.com/topic/libraries/support-library/features#media-playback) licensed under [Apache 2.0][Apache 2.0]
 * Uses [ExoPlayer][ExoPlayer] licensed under [Apache 2.0][Apache 2.0]
 * Uses [Material Design icons][Design Icons] licensed under [Apache 2.0][Apache 2.0]
 

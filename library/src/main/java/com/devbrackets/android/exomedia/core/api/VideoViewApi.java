@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Brian Wernick
+ * Copyright (C) 2016 - 2018 ExoMedia Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,10 @@ import android.view.View;
 
 import com.devbrackets.android.exomedia.ExoMedia;
 import com.devbrackets.android.exomedia.core.ListenerMux;
+import com.devbrackets.android.exomedia.core.exoplayer.WindowInfo;
+import com.devbrackets.android.exomedia.core.listener.CaptionListener;
 import com.devbrackets.android.exomedia.core.video.scale.ScaleType;
+import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.drm.MediaDrmCallback;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
@@ -63,6 +66,9 @@ public interface VideoViewApi {
      * @param drmCallback The callback to use when handling DRM media
      */
     void setDrmCallback(@Nullable MediaDrmCallback drmCallback);
+
+    @FloatRange(from = 0.0, to = 1.0)
+    float getVolume();
 
     boolean setVolume(@FloatRange(from = 0.0, to = 1.0) float volume);
 
@@ -104,6 +110,9 @@ public interface VideoViewApi {
     @IntRange(from = 0, to = 100)
     int getBufferedPercent();
 
+    @Nullable
+    WindowInfo getWindowInfo();
+
     /**
      * Sets the playback speed for this MediaPlayer.
      *
@@ -112,9 +121,27 @@ public interface VideoViewApi {
      */
     boolean setPlaybackSpeed(float speed);
 
+    float getPlaybackSpeed();
+
+    void setCaptionListener(@Nullable CaptionListener listener);
+
     boolean trackSelectionAvailable();
 
-    void setTrack(ExoMedia.RendererType type, int trackIndex);
+    /**
+     * @deprecated use {@link #setTrack(ExoMedia.RendererType, int, int)}
+     */
+    @Deprecated
+    void setTrack(@NonNull ExoMedia.RendererType type, int trackIndex);
+
+    void setTrack(@NonNull ExoMedia.RendererType type, int groupIndex, int trackIndex);
+
+    int getSelectedTrackIndex(@NonNull ExoMedia.RendererType type, int groupIndex);
+
+    /**
+     * Clear all selected tracks for the specified renderer.
+     * @param type The renderer type
+     */
+    void clearSelectedTracks(@NonNull ExoMedia.RendererType type);
 
     /**
      * Retrieves a list of available tracks to select from.  Typically {@link #trackSelectionAvailable()}
@@ -125,8 +152,25 @@ public interface VideoViewApi {
     @Nullable
     Map<ExoMedia.RendererType, TrackGroupArray> getAvailableTracks();
 
+    /**
+     * Enables or disables the track associated with the <code>type</code>. Note, by default all
+     * tracks are enabled
+     *
+     * @param type The {@link com.devbrackets.android.exomedia.ExoMedia.RendererType} to enable or disable the track for
+     * @param enabled <code>true</code> if the track should be enabled.
+     */
+    void setRendererEnabled(@NonNull ExoMedia.RendererType type, boolean enabled);
+
+    /**
+     * Return true if at least one renderer for the given type is enabled
+     * @param type The renderer type
+     * @return true if at least one renderer for the given type is enabled
+     */
+    boolean isRendererEnabled(@NonNull ExoMedia.RendererType type);
+
     void setScaleType(@NonNull ScaleType scaleType);
 
+    @NonNull
     ScaleType getScaleType();
 
     void setMeasureBasedOnAspectRatioEnabled(boolean doNotMeasureBasedOnAspectRatio);
@@ -143,5 +187,7 @@ public interface VideoViewApi {
 
     void setListenerMux(ListenerMux listenerMux);
 
-    void onVideoSizeChanged(int width, int height);
+    void onVideoSizeChanged(int width, int height, float pixelWidthHeightRatio);
+
+    void setRepeatMode(@Player.RepeatMode int repeatMode);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Brian Wernick
+ * Copyright (C) 2016 - 2018 ExoMedia Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,10 @@ import android.widget.MediaController;
 import com.devbrackets.android.exomedia.ExoMedia;
 import com.devbrackets.android.exomedia.core.ListenerMux;
 import com.devbrackets.android.exomedia.core.api.VideoViewApi;
+import com.devbrackets.android.exomedia.core.exoplayer.WindowInfo;
+import com.devbrackets.android.exomedia.core.listener.CaptionListener;
 import com.devbrackets.android.exomedia.core.video.ResizingSurfaceView;
+import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.drm.MediaDrmCallback;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
@@ -153,13 +156,24 @@ public class NativeSurfaceVideoView extends ResizingSurfaceView implements Nativ
     }
 
     @Override
+    public float getVolume() {
+        return delegate.getVolume();
+    }
+
+    @Override
     public boolean setVolume(@FloatRange(from = 0.0, to = 1.0) float volume) {
-        return false;
+        return delegate.setVolume(volume);
     }
 
     @Override
     public int getBufferedPercent() {
         return delegate.getBufferPercentage();
+    }
+
+    @Nullable
+    @Override
+    public WindowInfo getWindowInfo() {
+        return delegate.getWindowInfo();
     }
 
     /**
@@ -188,13 +202,38 @@ public class NativeSurfaceVideoView extends ResizingSurfaceView implements Nativ
     }
 
     @Override
+    public float getPlaybackSpeed() {
+        return delegate.getPlaybackSpeed();
+    }
+
+    @Override
+    public void setCaptionListener(@Nullable CaptionListener listener) {
+        // Purposefully left blank
+    }
+
+    @Override
     public boolean trackSelectionAvailable() {
         return false;
     }
 
     @Override
-    public void setTrack(ExoMedia.RendererType trackType, int trackIndex) {
-        //Purposefully left blank
+    public void setTrack(@NonNull ExoMedia.RendererType trackType, int trackIndex) {
+        // Purposefully left blank
+    }
+
+    @Override
+    public void setTrack(@NonNull ExoMedia.RendererType type, int groupIndex, int trackIndex) {
+        // Purposefully left blank
+    }
+
+    @Override
+    public int getSelectedTrackIndex(@NonNull ExoMedia.RendererType type, int groupIndex) {
+        return -1;
+    }
+
+    @Override
+    public void clearSelectedTracks(@NonNull ExoMedia.RendererType type) {
+        // Purposefully left blank
     }
 
     @Nullable
@@ -204,15 +243,30 @@ public class NativeSurfaceVideoView extends ResizingSurfaceView implements Nativ
     }
 
     @Override
+    public void setRendererEnabled(@NonNull ExoMedia.RendererType type, boolean enabled) {
+        // Purposefully left blank
+    }
+
+    @Override
+    public boolean isRendererEnabled(@NonNull ExoMedia.RendererType type) {
+        return false;
+    }
+
+    @Override
     public void setListenerMux(ListenerMux listenerMux) {
         delegate.setListenerMux(listenerMux);
     }
 
     @Override
-    public void onVideoSizeChanged(int width, int height) {
-        if (updateVideoSize(width, height)) {
+    public void onVideoSizeChanged(int width, int height, float pixelWidthHeightRatio) {
+        if (updateVideoSize((int) (width * pixelWidthHeightRatio), height)) {
             requestLayout();
         }
+    }
+
+    @Override
+    public void setRepeatMode(@Player.RepeatMode int repeatMode) {
+        // Purposefully left blank
     }
 
     /**
