@@ -31,6 +31,7 @@ import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.TextureView;
@@ -262,6 +263,7 @@ public class VideoView extends RelativeLayout {
      */
     public void showControls() {
         if (videoControls != null) {
+            videoControls.setDuration(getDuration());
             videoControls.show();
 
             if (isPlaying()) {
@@ -1009,6 +1011,7 @@ public class VideoView extends RelativeLayout {
         @Override
         public void onPrepared() {
             if (videoControls != null) {
+                Log.d("VideoView", "@onPrepared duration: " + getDuration());
                 videoControls.setDuration(getDuration());
                 videoControls.finishLoading();
             }
