@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Brian Wernick
+ * Copyright (C) 2016 - 2018 ExoMedia Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,14 @@ import android.media.MediaPlayer;
 import android.media.PlaybackParams;
 import android.net.Uri;
 import android.os.Build;
+import androidx.annotation.FloatRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import android.util.Log;
 import android.view.Surface;
 
 import com.devbrackets.android.exomedia.core.ListenerMux;
+import com.devbrackets.android.exomedia.core.exoplayer.WindowInfo;
 import com.devbrackets.android.exomedia.core.video.ClearableSurface;
 
 import java.io.IOException;
@@ -70,6 +72,9 @@ public class NativeVideoDelegate {
     protected boolean playRequested = false;
     protected long requestedSeek;
     protected int currentBufferPercent;
+
+    @FloatRange(from = 0.0, to = 1.0)
+    protected float requestedVolume = 1.0f;
 
     protected ListenerMux listenerMux;
 
@@ -133,6 +138,17 @@ public class NativeVideoDelegate {
         return mediaPlayer.getCurrentPosition();
     }
 
+    @FloatRange(from = 0.0, to = 1.0)
+    public float getVolume() {
+        return requestedVolume;
+    }
+
+    public boolean setVolume(@FloatRange(from = 0.0, to = 1.0) float volume) {
+        requestedVolume = volume;
+        mediaPlayer.setVolume(volume, volume);
+        return true;
+    }
+
     public void seekTo(long milliseconds) {
         if (isReady()) {
             mediaPlayer.seekTo((int) milliseconds);
@@ -154,6 +170,11 @@ public class NativeVideoDelegate {
         return 0;
     }
 
+    @Nullable
+    public WindowInfo getWindowInfo() {
+        return null;
+    }
+
     public boolean setPlaybackSpeed(float speed) {
         // Marshmallow+ support setting the playback speed natively
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -165,6 +186,15 @@ public class NativeVideoDelegate {
         }
 
         return false;
+    }
+
+    public float getPlaybackSpeed() {
+        // Marshmallow+ support setting the playback speed natively
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            return mediaPlayer.getPlaybackParams().getSpeed();
+        }
+
+        return 1F;
     }
 
     /**

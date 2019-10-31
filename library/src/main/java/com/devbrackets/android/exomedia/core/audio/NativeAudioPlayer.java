@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2017 Brian Wernick
+ * Copyright (C) 2016 - 2017 ExoMedia Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@ import android.util.Log;
 import com.devbrackets.android.exomedia.ExoMedia;
 import com.devbrackets.android.exomedia.core.ListenerMux;
 import com.devbrackets.android.exomedia.core.api.AudioPlayerApi;
+import com.devbrackets.android.exomedia.core.exoplayer.WindowInfo;
+import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.drm.MediaDrmCallback;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
@@ -60,6 +62,12 @@ public class NativeAudioPlayer implements AudioPlayerApi {
 
     protected long requestedSeek;
     protected int currentBufferPercent = 0;
+
+    @FloatRange(from = 0.0, to = 1.0)
+    protected float volumeLeft = 1.0f;
+
+    @FloatRange(from = 0.0, to = 1.0)
+    protected float volumeRight = 1.0f;
 
     public NativeAudioPlayer(@NonNull Context context) {
         this.context = context;
@@ -103,14 +111,27 @@ public class NativeAudioPlayer implements AudioPlayerApi {
     }
 
     @Override
+    public float getVolumeLeft() {
+        return volumeLeft;
+    }
+
+    @Override
+    public float getVolumeRight() {
+        return volumeRight;
+    }
+
+    @Override
     public void setVolume(@FloatRange(from = 0.0, to = 1.0) float left, @FloatRange(from = 0.0, to = 1.0) float right) {
+        volumeLeft = left;
+        volumeRight = right;
+
         mediaPlayer.setVolume(left, right);
     }
 
     @Override
     public void seekTo(@IntRange(from = 0) long milliseconds) {
         if (listenerMux != null && listenerMux.isPrepared()) {
-            mediaPlayer.seekTo((int)milliseconds);
+            mediaPlayer.seekTo((int) milliseconds);
             requestedSeek = 0;
         } else {
             requestedSeek = milliseconds;
@@ -178,6 +199,12 @@ public class NativeAudioPlayer implements AudioPlayerApi {
         return currentBufferPercent;
     }
 
+    @Nullable
+    @Override
+    public WindowInfo getWindowInfo() {
+        return null;
+    }
+
     @Override
     public void release() {
         mediaPlayer.release();
@@ -203,12 +230,22 @@ public class NativeAudioPlayer implements AudioPlayerApi {
     }
 
     @Override
+    public float getPlaybackSpeed() {
+        // Marshmallow+ support setting the playback speed natively
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            return mediaPlayer.getPlaybackParams().getSpeed();
+        }
+
+        return 1F;
+    }
+
+    @Override
     public void setAudioStreamType(int streamType) {
         mediaPlayer.setAudioStreamType(streamType);
     }
 
     @Override
-    public void setWakeMode(Context context, int mode) {
+    public void setWakeMode(@NonNull Context context, int mode) {
         mediaPlayer.setWakeMode(context, mode);
     }
 
@@ -218,8 +255,18 @@ public class NativeAudioPlayer implements AudioPlayerApi {
     }
 
     @Override
-    public void setTrack(ExoMedia.RendererType trackType, int trackIndex) {
-        //Purposefully left blank
+    public void setTrack(@NonNull ExoMedia.RendererType trackType, int trackIndex) {
+        // Purposefully left blank
+    }
+
+    @Override
+    public void setTrack(@NonNull ExoMedia.RendererType type, int groupIndex, int trackIndex) {
+        // Purposefully left blank
+    }
+
+    @Override
+    public int getSelectedTrackIndex(@NonNull ExoMedia.RendererType type, int groupIndex) {
+        return -1;
     }
 
     @Nullable
@@ -244,6 +291,11 @@ public class NativeAudioPlayer implements AudioPlayerApi {
         if (requestedSeek != 0) {
             seekTo(requestedSeek);
         }
+    }
+
+    @Override
+    public void setRepeatMode(@Player.RepeatMode int repeatMode) {
+        // Purposefully left blank
     }
 
     protected class InternalListeners implements MediaPlayer.OnBufferingUpdateListener {

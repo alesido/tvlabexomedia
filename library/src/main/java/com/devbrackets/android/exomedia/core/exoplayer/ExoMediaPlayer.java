@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 Brian Wernick,
+ * Copyright (C) 2015-2018 ExoMedia Contributors,
  * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -53,10 +53,15 @@ import com.google.android.exoplayer2.Format;
 import com.google.android.exoplayer2.LoadControl;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
+import com.google.android.exoplayer2.PlayerMessage;
 import com.google.android.exoplayer2.Renderer;
+import com.google.android.exoplayer2.Timeline;
+import com.google.android.exoplayer2.analytics.AnalyticsCollector;
+import com.google.android.exoplayer2.analytics.AnalyticsListener;
 import com.google.android.exoplayer2.audio.AudioAttributes;
 import com.google.android.exoplayer2.audio.AudioRendererEventListener;
 import com.google.android.exoplayer2.decoder.DecoderCounters;
+import com.google.android.exoplayer2.drm.DefaultDrmSessionEventListener;
 import com.google.android.exoplayer2.drm.DefaultDrmSessionManager;
 import com.google.android.exoplayer2.drm.DrmSessionManager;
 import com.google.android.exoplayer2.drm.ExoMediaDrm;
@@ -66,6 +71,7 @@ import com.google.android.exoplayer2.drm.MediaDrmCallback;
 import com.google.android.exoplayer2.metadata.Metadata;
 import com.google.android.exoplayer2.metadata.MetadataOutput;
 import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.TrackGroup;
 import com.google.android.exoplayer2.source.MergingMediaSource;
 import com.google.android.exoplayer2.source.SingleSampleMediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
@@ -73,18 +79,20 @@ import com.google.android.exoplayer2.text.Cue;
 import com.google.android.exoplayer2.text.TextOutput;
 import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
-import com.google.android.exoplayer2.trackselection.FixedTrackSelection;
 import com.google.android.exoplayer2.trackselection.MappingTrackSelector;
+import com.google.android.exoplayer2.upstream.BandwidthMeter;
 import com.google.android.exoplayer2.trackselection.TrackSelection;
 import com.google.android.exoplayer2.upstream.BandwidthMeter;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
+import com.google.android.exoplayer2.util.Clock;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.MimeTypes;
 import com.google.android.exoplayer2.util.Util;
 import com.google.android.exoplayer2.video.VideoRendererEventListener;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -161,6 +169,12 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
     private CapabilitiesListener capabilitiesListener = new CapabilitiesListener();
     private int audioSessionId = C.AUDIO_SESSION_ID_UNSET;
 
+    @FloatRange(from = 0.0, to = 1.0)
+    protected float requestedVolume = 1.0f;
+
+    @NonNull
+    private AnalyticsCollector analyticsCollector;
+
     public ExoMediaPlayer(@NonNull Context context) {
         this.context = context;
 
@@ -179,7 +193,8 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
 
         ComponentListener componentListener = new ComponentListener();
         RendererProvider rendererProvider = new RendererProvider(context, mainHandler, componentListener, componentListener, componentListener, componentListener);
-        rendererProvider.setDrmSessionManager(generateDrmSessionManager());
+        DrmSessionManager<FrameworkMediaCrypto> drmSessionManager = generateDrmSessionManager();
+        rendererProvider.setDrmSessionManager(drmSessionManager);
 
         renderers = rendererProvider.generate();
 
@@ -189,6 +204,9 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
         LoadControl loadControl = ExoMedia.Data.loadControl != null ? ExoMedia.Data.loadControl : new DefaultLoadControl();
         player = ExoPlayerFactory.newInstance(renderers.toArray(new Renderer[renderers.size()]), trackSelector, loadControl);
         player.addListener(this);
+        analyticsCollector = new AnalyticsCollector.Factory().createAnalyticsCollector(player, Clock.DEFAULT);
+        player.addListener(analyticsCollector);
+        setupDamSessionManagerAnalytics(drmSessionManager);
 
         player.addListener(ExoEventWatcher.getInstance());
     }
@@ -218,7 +236,7 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
     }
 
     public void setUri(@Nullable Uri uri) {
-        setMediaSource(uri != null ? mediaSourceProvider.generate(context, mainHandler, uri, bandwidthMeter) : null);
+        setMediaSource(uri != null ? ExoMedia.Data.mediaSourceProvider.generate(context, mainHandler, uri, bandwidthMeter) : null);
     }
 
     public void setVideoAndSubtitlesUri(@Nullable Uri videoUri, @Nullable Uri subtitlesUri) {
@@ -243,6 +261,13 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
     }
 
     public void setMediaSource(@Nullable MediaSource source) {
+        if (this.mediaSource != null) {
+            this.mediaSource.removeEventListener(analyticsCollector);
+            analyticsCollector.resetForNewMediaSource();
+        }
+        if (source != null) {
+            source.addEventListener(mainHandler, analyticsCollector);
+        }
         this.mediaSource = source;
 
         if (playerStateReportListener != null && mediaSource != null) {
@@ -319,13 +344,57 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
         return surface;
     }
 
-    public void blockingClearSurface() {
+    @NonNull
+    public ExoPlayer getExoPlayer() {
+        return player;
+    }
+
+    @NonNull
+    public BandwidthMeter getBandwidthMeter() {
+        return bandwidthMeter;
+    }
+
+    /**
+     * Returns the {@link AnalyticsCollector} used for collecting analytics events.
+     */
+    @NonNull
+    public AnalyticsCollector getAnalyticsCollector() {
+        return analyticsCollector;
+    }
+
+    /**
+     * Adds an {@link AnalyticsListener} to receive analytics events.
+     *
+     * @param listener The listener to be added.
+     */
+    public void addAnalyticsListener(AnalyticsListener listener) {
+        analyticsCollector.addListener(listener);
+    }
+
+    /**
+     * Removes an {@link AnalyticsListener}.
+     *
+     * @param listener The listener to be removed.
+     */
+    public void removeAnalyticsListener(AnalyticsListener listener) {
+        analyticsCollector.removeListener(listener);
+    }
+
+    public void clearSurface() {
         if (surface != null) {
             surface.release();
         }
 
         surface = null;
-        sendMessage(C.TRACK_TYPE_VIDEO, C.MSG_SET_SURFACE, null, true);
+        sendMessage(C.TRACK_TYPE_VIDEO, C.MSG_SET_SURFACE, null, false);
+    }
+
+    /**
+     * @deprecated use {@link #clearSurface()} as this is no longer blocking
+     */
+    @Deprecated
+    public void blockingClearSurface() {
+        clearSurface();
     }
 
     /**
@@ -347,56 +416,163 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
         }
 
         // Maps the available tracks
-        RendererType[] types = new RendererType[] {RendererType.AUDIO, RendererType.VIDEO, RendererType.CLOSED_CAPTION, RendererType.METADATA};
+        RendererType[] types = new RendererType[]{RendererType.AUDIO, RendererType.VIDEO, RendererType.CLOSED_CAPTION, RendererType.METADATA};
         for (RendererType type : types) {
-            int exoPlayerTrackIndex = getExoPlayerTrackType(type) - 1;
-            if (mappedTrackInfo.length > exoPlayerTrackIndex) {
-                trackMap.put(type, mappedTrackInfo.getTrackGroups(exoPlayerTrackIndex));
+            List<TrackGroup> trackGroups = new ArrayList<>();
+            // collect track groups from all the track renderers of the same type
+            for (Integer exoPlayerTrackIndex : getExoPlayerTracksInfo(type, 0, mappedTrackInfo).rendererTrackIndexes) {
+                TrackGroupArray trackGroupArray = mappedTrackInfo.getTrackGroups(exoPlayerTrackIndex);
+                for (int i = 0; i < trackGroupArray.length; i++) {
+                    trackGroups.add(trackGroupArray.get(i));
+                }
+            }
+            if (!trackGroups.isEmpty()) {
+                // construct fake track group array for track groups from all the renderers of the same type
+                trackMap.put(type, new TrackGroupArray(trackGroups.toArray(new TrackGroup[trackGroups.size()])));
             }
         }
 
         return trackMap;
     }
 
+    /**
+     * @deprecated Use {@link #getSelectedTrackIndex(RendererType, int)}
+     */
     public int getSelectedTrackIndex(@NonNull RendererType type) {
+        return getSelectedTrackIndex(type, 0);
+    }
+
+    public int getSelectedTrackIndex(@NonNull RendererType type, int groupIndex) {
         // Retrieves the available tracks
-        int exoPlayerTrackIndex = getExoPlayerTrackType(type);
         MappingTrackSelector.MappedTrackInfo mappedTrackInfo = trackSelector.getCurrentMappedTrackInfo();
-        TrackGroupArray trackGroupArray = mappedTrackInfo == null ? null : mappedTrackInfo.getTrackGroups(exoPlayerTrackIndex);
+        ExoPlayerRendererTracksInfo tracksInfo = getExoPlayerTracksInfo(type, groupIndex, mappedTrackInfo);
+        TrackGroupArray trackGroupArray = tracksInfo.rendererTrackIndex == C.INDEX_UNSET ?
+                null : mappedTrackInfo.getTrackGroups(tracksInfo.rendererTrackIndex);
         if (trackGroupArray == null || trackGroupArray.length == 0) {
             return -1;
         }
 
         // Verifies the track selection has been overridden
-        MappingTrackSelector.SelectionOverride selectionOverride = trackSelector.getSelectionOverride(exoPlayerTrackIndex, trackGroupArray);
-        if (selectionOverride == null || selectionOverride.groupIndex != exoPlayerTrackIndex || selectionOverride.length <= 0) {
+        DefaultTrackSelector.SelectionOverride selectionOverride = trackSelector.getParameters().getSelectionOverride(tracksInfo.rendererTrackIndex, trackGroupArray);
+        if (selectionOverride == null || selectionOverride.groupIndex != tracksInfo.rendererTrackGroupIndex || selectionOverride.length <= 0) {
             return -1;
         }
 
-        return selectionOverride.tracks[0];
+        return selectionOverride.tracks[0]; // In the current implementation only one track can be selected at a time so get the first one.
     }
 
+    /**
+     * @deprecated Use {@link #setSelectedTrack(RendererType, int, int)}
+     */
+    @Deprecated
     public void setSelectedTrack(@NonNull RendererType type, int index) {
+        setSelectedTrack(type, 0, index);
+    }
+
+    public void setSelectedTrack(@NonNull RendererType type, int groupIndex, int trackIndex) {
         // Retrieves the available tracks
-        int exoPlayerTrackIndex = getExoPlayerTrackType(type) - 1;
         MappingTrackSelector.MappedTrackInfo mappedTrackInfo = trackSelector.getCurrentMappedTrackInfo();
-        TrackGroupArray trackGroupArray = mappedTrackInfo == null ? null : mappedTrackInfo.getTrackGroups(exoPlayerTrackIndex);
-        if (trackGroupArray == null || trackGroupArray.length == 0) {
+        ExoPlayerRendererTracksInfo tracksInfo = getExoPlayerTracksInfo(type, groupIndex, mappedTrackInfo);
+        TrackGroupArray trackGroupArray = tracksInfo.rendererTrackIndex == C.INDEX_UNSET || mappedTrackInfo == null ?
+                null : mappedTrackInfo.getTrackGroups(tracksInfo.rendererTrackIndex);
+        if (trackGroupArray == null || trackGroupArray.length == 0 || trackGroupArray.length <= tracksInfo.rendererTrackGroupIndex) {
             return;
         }
 
-        // Creates the track selection override
-        int[] tracks = new int[] {0};
-        TrackSelection.Factory factory = tracks.length == 1 ? new FixedTrackSelection.Factory() : adaptiveTrackSelectionFactory;
-        MappingTrackSelector.SelectionOverride selectionOverride = new MappingTrackSelector.SelectionOverride(factory, index, tracks);
+        // Finds the requested group
+        TrackGroup group = trackGroupArray.get(tracksInfo.rendererTrackGroupIndex);
+        if (group == null || group.length <= trackIndex) {
+            return;
+        }
 
-        // Specifies the correct track to use
-        trackSelector.setRendererDisabled(exoPlayerTrackIndex, false);
-        trackSelector.setSelectionOverride(exoPlayerTrackIndex,  trackGroupArray, selectionOverride);
+        DefaultTrackSelector.ParametersBuilder parametersBuilder = trackSelector.buildUponParameters();
+        for (int rendererTrackIndex : tracksInfo.rendererTrackIndexes) {
+            parametersBuilder.clearSelectionOverrides(rendererTrackIndex);
+            if (tracksInfo.rendererTrackIndex == rendererTrackIndex) {
+                // Specifies the correct track to use
+                parametersBuilder.setSelectionOverride(rendererTrackIndex, trackGroupArray,
+                        new DefaultTrackSelector.SelectionOverride(tracksInfo.rendererTrackGroupIndex, trackIndex));
+                // make sure renderer is enabled
+                parametersBuilder.setRendererDisabled(rendererTrackIndex, false);
+            } else {
+                // disable other renderers of the same type to avoid playback errors
+                parametersBuilder.setRendererDisabled(rendererTrackIndex, true);
+            }
+        }
+        trackSelector.setParameters(parametersBuilder);
+    }
+
+    /**
+     * Clear all selected tracks for the specified renderer and re-enable all renderers so the player can select the default track.
+     *
+     * @param type The renderer type
+     */
+    public void clearSelectedTracks(@NonNull RendererType type) {
+        // Retrieves the available tracks
+        MappingTrackSelector.MappedTrackInfo mappedTrackInfo = trackSelector.getCurrentMappedTrackInfo();
+        ExoPlayerRendererTracksInfo tracksInfo = getExoPlayerTracksInfo(type, 0, mappedTrackInfo);
+        DefaultTrackSelector.ParametersBuilder parametersBuilder = trackSelector.buildUponParameters();
+
+        for (int rendererTrackIndex : tracksInfo.rendererTrackIndexes) {
+            // Reset all renderers re-enabling so the player can select the streams default track.
+            parametersBuilder.setRendererDisabled(rendererTrackIndex, false)
+                    .clearSelectionOverrides(rendererTrackIndex);
+        }
+        trackSelector.setParameters(parametersBuilder);
+    }
+
+    public void setRendererEnabled(@NonNull RendererType type, boolean enabled) {
+        MappingTrackSelector.MappedTrackInfo mappedTrackInfo = trackSelector.getCurrentMappedTrackInfo();
+        ExoPlayerRendererTracksInfo tracksInfo = getExoPlayerTracksInfo(type, 0, mappedTrackInfo);
+        if (!tracksInfo.rendererTrackIndexes.isEmpty()) {
+            boolean enabledSomething = false;
+            DefaultTrackSelector.ParametersBuilder parametersBuilder = trackSelector.buildUponParameters();
+            for (int rendererTrackIndex : tracksInfo.rendererTrackIndexes) {
+                if (enabled) {
+                    DefaultTrackSelector.SelectionOverride selectionOverride = trackSelector.getParameters().getSelectionOverride(rendererTrackIndex, mappedTrackInfo.getTrackGroups(rendererTrackIndex));
+                    // check whether the renderer has been selected before
+                    // other renderers should be kept disabled to avoid playback errors
+                    if (selectionOverride != null) {
+                        parametersBuilder.setRendererDisabled(rendererTrackIndex, false);
+                        enabledSomething = true;
+                    }
+                } else {
+                    parametersBuilder.setRendererDisabled(rendererTrackIndex, true);
+                }
+            }
+            if (enabled && !enabledSomething) {
+                // if nothing has been enabled enable the first sequential renderer
+                parametersBuilder.setRendererDisabled(tracksInfo.rendererTrackIndexes.get(0), false);
+            }
+            trackSelector.setParameters(parametersBuilder);
+        }
+    }
+
+    /**
+     * Return true if at least one renderer for the given type is enabled
+     * @param type The renderer type
+     * @return true if at least one renderer for the given type is enabled
+     */
+    public boolean isRendererEnabled(@NonNull RendererType type) {
+        MappingTrackSelector.MappedTrackInfo mappedTrackInfo = trackSelector.getCurrentMappedTrackInfo();
+        ExoPlayerRendererTracksInfo tracksInfo = getExoPlayerTracksInfo(type, 0, mappedTrackInfo);
+        DefaultTrackSelector.Parameters parameters = trackSelector.getParameters();
+        for (Integer rendererTrackIndex : tracksInfo.rendererTrackIndexes) {
+            if (!parameters.getRendererDisabled(rendererTrackIndex)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void setVolume(@FloatRange(from = 0.0, to = 1.0) float volume) {
-        sendMessage(C.TRACK_TYPE_AUDIO, C.MSG_SET_VOLUME, volume);
+        requestedVolume = volume;
+        sendMessage(C.TRACK_TYPE_AUDIO, C.MSG_SET_VOLUME, requestedVolume);
+    }
+
+    @FloatRange(from = 0.0, to = 1.0)
+    public float getVolume() {
+        return requestedVolume;
     }
 
     public void setAudioStreamType(int streamType) {
@@ -446,6 +622,48 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
     }
 
     public void seekTo(long positionMs) {
+        seekTo(positionMs, false);
+    }
+
+    /**
+     * TODO: Expose this
+     * Seeks to the specified position in the media currently loaded specified by <code>positionMs</code>.
+     * If <code>limitToCurrentWindow</code> is true then a seek won't be allowed to span across windows.
+     * This should only be different if the media in playback has multiple windows (e.g. in the case of using a
+     * <code>ConcatenatingMediaSource</code> with more than 1 source)
+     *
+     * @param positionMs           The position to seek to in the media
+     * @param limitToCurrentWindow <code>true</code> to only seek in the current window
+     */
+    public void seekTo(long positionMs, boolean limitToCurrentWindow) {
+        analyticsCollector.notifySeekStarted();
+        if (limitToCurrentWindow) {
+            player.seekTo(positionMs);
+            stateStore.setMostRecentState(stateStore.isLastReportedPlayWhenReady(), StateStore.STATE_SEEKING);
+            return;
+        }
+
+        // We seek to the position in the timeline (may be across windows)
+        Timeline timeline = player.getCurrentTimeline();
+        int windowCount = timeline.getWindowCount();
+
+        long cumulativePositionMs = 0;
+        Timeline.Window window = new Timeline.Window();
+
+        for (int index = 0; index < windowCount; index++) {
+            timeline.getWindow(index, window);
+
+            long windowDurationMs = window.getDurationMs();
+            if (cumulativePositionMs < positionMs && positionMs <= (cumulativePositionMs + windowDurationMs)) {
+                player.seekTo(index, positionMs - cumulativePositionMs);
+                stateStore.setMostRecentState(stateStore.isLastReportedPlayWhenReady(), StateStore.STATE_SEEKING);
+                return;
+            }
+
+            cumulativePositionMs += windowDurationMs;
+        }
+
+        Log.e(TAG, "Unable to seek across windows, falling back to in-window seeking");
         player.seekTo(positionMs);
         stateStore.setMostRecentState(stateStore.isLastReportedPlayWhenReady(), StateStore.STATE_SEEKING);
     }
@@ -474,6 +692,10 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
         setBufferRepeaterStarted(false);
         listeners.clear();
 
+        if (mediaSource != null) {
+            mediaSource.removeEventListener(analyticsCollector);
+        }
+
         surface = null;
         player.release();
         stayAwake(false);
@@ -494,8 +716,45 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
         return true;
     }
 
+    public float getPlaybackSpeed() {
+        PlaybackParameters params = player.getPlaybackParameters();
+        return params.speed;
+    }
+
     public long getCurrentPosition() {
-        return player.getCurrentPosition();
+        return getCurrentPosition(false);
+    }
+
+    /**
+     * TODO: Expose this
+     * Returns the position in the media. If <code>limitToCurrentWindow</code> is <code>true</code> then the position
+     * in the current window will be returned, otherwise the total position across all windows will be returned.
+     * These should only be different if the media in playback has multiple windows (e.g. in the case of using a
+     * <code>ConcatenatingMediaSource</code> with more than 1 source)
+     *
+     * @param limitToCurrentWindow If <code>true</code> the position within the current window will be returned
+     * @return The current position in the media
+     */
+    public long getCurrentPosition(boolean limitToCurrentWindow) {
+        long positionInCurrentWindow = player.getCurrentPosition();
+        if (limitToCurrentWindow) {
+            return positionInCurrentWindow;
+        }
+
+        // TODO cache the total time at the start of each window (e.g. Map<WindowIndex, cumulativeStartTimeMs>)
+        // Adds the preceding window durations
+        Timeline timeline = player.getCurrentTimeline();
+        int maxWindowIndex = Math.min(timeline.getWindowCount() - 1, player.getCurrentWindowIndex());
+
+        long cumulativePositionMs = 0;
+        Timeline.Window window = new Timeline.Window();
+
+        for (int index = 0; index < maxWindowIndex; index++) {
+            timeline.getWindow(index, window);
+            cumulativePositionMs += window.getDurationMs();
+        }
+
+        return cumulativePositionMs + positionInCurrentWindow;
     }
 
     public long getDuration() {
@@ -504,6 +763,24 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
 
     public int getBufferedPercentage() {
         return player.getBufferedPercentage();
+    }
+
+    @Nullable
+    public WindowInfo getWindowInfo() {
+        Timeline timeline = player.getCurrentTimeline();
+        if (timeline.isEmpty()) {
+            return null;
+        }
+
+        int currentWindowIndex = player.getCurrentWindowIndex();
+        Timeline.Window currentWindow = timeline.getWindow(currentWindowIndex, new Timeline.Window(), true);
+
+        return new WindowInfo(
+                player.getPreviousWindowIndex(),
+                currentWindowIndex,
+                player.getNextWindowIndex(),
+                currentWindow
+        );
     }
 
     public boolean getPlayWhenReady() {
@@ -519,7 +796,7 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
      * By default, no attempt is made to keep the device awake during playback.
      *
      * @param context the Context to use
-     * @param mode the power/wake mode to set
+     * @param mode    the power/wake mode to set
      * @see android.os.PowerManager
      */
     public void setWakeMode(Context context, int mode) {
@@ -549,6 +826,10 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
         stayAwake(wasHeld);
     }
 
+    public void setRepeatMode(@Player.RepeatMode int repeatMode) {
+        player.setRepeatMode(repeatMode);
+    }
+
     protected int getExoPlayerTrackType(@NonNull RendererType type) {
         switch (type) {
             case AUDIO:
@@ -564,6 +845,71 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
         return C.TRACK_TYPE_UNKNOWN;
     }
 
+    protected RendererType getExoMediaRendererType(int exoPlayerTrackType) {
+        switch (exoPlayerTrackType) {
+            case C.TRACK_TYPE_AUDIO:
+                return RendererType.AUDIO;
+            case C.TRACK_TYPE_VIDEO:
+                return RendererType.VIDEO;
+            case C.TRACK_TYPE_TEXT:
+                return RendererType.CLOSED_CAPTION;
+            case C.TRACK_TYPE_METADATA:
+                return RendererType.METADATA;
+            default:
+                return null;
+        }
+    }
+
+    protected ExoPlayerRendererTracksInfo getExoPlayerTracksInfo(@NonNull RendererType type, int groupIndex, MappingTrackSelector.MappedTrackInfo mappedTrackInfo) {
+        // holder for the all exo player renderer track indexes of the specified renderer type
+        List<Integer> exoPlayerRendererTrackIndexes = new ArrayList<>();
+        // the exoplayer renderer track index related to the specified group index
+        int exoPlayerRendererTrackIndex = C.INDEX_UNSET;
+        // the corrected exoplayer group index
+        int exoPlayerRendererTrackGroupIndex = C.INDEX_UNSET;
+        int skippedRenderersGroupsCount = 0;
+        if (mappedTrackInfo != null) {
+            for (int rendererIndex = 0; rendererIndex < mappedTrackInfo.getRendererCount(); rendererIndex++) {
+                int exoPlayerRendererType = mappedTrackInfo.getRendererType(rendererIndex);
+                if (type == getExoMediaRendererType(exoPlayerRendererType)) {
+                    exoPlayerRendererTrackIndexes.add(rendererIndex);
+                    TrackGroupArray trackGroups = mappedTrackInfo.getTrackGroups(rendererIndex);
+                    if (skippedRenderersGroupsCount + trackGroups.length > groupIndex) {
+                        if (exoPlayerRendererTrackIndex == C.INDEX_UNSET) {
+                            // if the groupIndex belongs to the current exo player renderer
+                            exoPlayerRendererTrackIndex = rendererIndex;
+                            exoPlayerRendererTrackGroupIndex = groupIndex - skippedRenderersGroupsCount;
+                        }
+                    } else {
+                        skippedRenderersGroupsCount += trackGroups.length;
+                    }
+                }
+            }
+        }
+        return new ExoPlayerRendererTracksInfo(exoPlayerRendererTrackIndexes, exoPlayerRendererTrackIndex, exoPlayerRendererTrackGroupIndex);
+    }
+
+    class ExoPlayerRendererTracksInfo {
+        /**
+         * The exo player renderer track indexes
+         */
+        final List<Integer> rendererTrackIndexes;
+        /**
+         * The renderer track index related to the requested <code>groupIndex</code>
+         */
+        final int rendererTrackIndex;
+        /**
+         * The corrected exoplayer group index which may be used to obtain proper track group from the renderer
+         */
+        final int rendererTrackGroupIndex;
+
+        public ExoPlayerRendererTracksInfo(List<Integer> rendererTrackIndexes, int rendererTrackIndex, int rendererTrackGroupIndex) {
+            this.rendererTrackIndexes = Collections.unmodifiableList(rendererTrackIndexes);
+            this.rendererTrackIndex = rendererTrackIndex;
+            this.rendererTrackGroupIndex = rendererTrackGroupIndex;
+        }
+    }
+
     protected void sendMessage(int renderType, int messageType, Object message) {
         sendMessage(renderType, messageType, message, false);
     }
@@ -573,17 +919,44 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
             return;
         }
 
-        List<ExoPlayer.ExoPlayerMessage> messages = new ArrayList<>();
+        List<PlayerMessage> messages = new ArrayList<>();
         for (Renderer renderer : renderers) {
             if (renderer.getTrackType() == renderType) {
-                messages.add(new ExoPlayer.ExoPlayerMessage(renderer, messageType, message));
+                messages.add(player.createMessage(renderer).setType(messageType).setPayload(message));
             }
         }
 
         if (blocking) {
-            player.blockingSendMessages(messages.toArray(new ExoPlayer.ExoPlayerMessage[messages.size()]));
+            blockingSendMessages(messages);
         } else {
-            player.sendMessages(messages.toArray(new ExoPlayer.ExoPlayerMessage[messages.size()]));
+            for (PlayerMessage playerMessage : messages) {
+                playerMessage.send();
+            }
+        }
+    }
+
+    /**
+     * This was pulled from the <i>Deprecated</i> ExoPlayerImpl#blockingSendMessages method
+     *
+     * @param messages The messages
+     */
+    protected void blockingSendMessages(List<PlayerMessage> messages) {
+        boolean wasInterrupted = false;
+        for (PlayerMessage message : messages) {
+            boolean blockMessage = true;
+            while (blockMessage) {
+                try {
+                    message.blockUntilDelivered();
+                    blockMessage = false;
+                } catch (InterruptedException e) {
+                    wasInterrupted = true;
+                }
+            }
+        }
+
+        if (wasInterrupted) {
+            // Restore the interrupted status.
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -623,10 +996,19 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
         UUID uuid = C.WIDEVINE_UUID;
 
         try {
-            return new DefaultDrmSessionManager<>(uuid, FrameworkMediaDrm.newInstance(uuid), new DelegatedMediaDrmCallback(), null, mainHandler, capabilitiesListener);
+            DefaultDrmSessionManager<FrameworkMediaCrypto> sessionManager = new DefaultDrmSessionManager<>(uuid, FrameworkMediaDrm.newInstance(uuid), new DelegatedMediaDrmCallback(), null);
+            sessionManager.addListener(mainHandler, capabilitiesListener);
+
+            return sessionManager;
         } catch (Exception e) {
             Log.d(TAG, "Unable to create a DrmSessionManager due to an exception", e);
             return null;
+        }
+    }
+
+    protected void setupDamSessionManagerAnalytics(DrmSessionManager<FrameworkMediaCrypto> drmSessionManager) {
+        if (drmSessionManager instanceof DefaultDrmSessionManager) {
+            ((DefaultDrmSessionManager) drmSessionManager).addListener(mainHandler, analyticsCollector);
         }
     }
 
@@ -649,7 +1031,7 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
             // see events when that is the only change.  Additionally, on some devices we get states ordered as
             // [seeking, ready, buffering, ready] while on others we get [seeking, buffering, ready]
             boolean informSeekCompletion = stateStore.matchesHistory(new int[]{StateStore.STATE_SEEKING, Player.STATE_BUFFERING, Player.STATE_READY}, true);
-            informSeekCompletion |= stateStore.matchesHistory(new int[] {Player.STATE_BUFFERING, StateStore.STATE_SEEKING, Player.STATE_READY}, true);
+            informSeekCompletion |= stateStore.matchesHistory(new int[]{Player.STATE_BUFFERING, StateStore.STATE_SEEKING, Player.STATE_READY}, true);
             informSeekCompletion |= stateStore.matchesHistory(new int[]{StateStore.STATE_SEEKING, Player.STATE_READY, Player.STATE_BUFFERING, Player.STATE_READY}, true);
 
             for (ExoPlayerListener listener : listeners) {
@@ -745,7 +1127,7 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
         }
     }
 
-    private class CapabilitiesListener implements DefaultDrmSessionManager.EventListener {
+    private class CapabilitiesListener implements DefaultDrmSessionEventListener {
         @Override
         public void onDrmKeysLoaded() {
             // Purposefully left blank
@@ -777,13 +1159,14 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
 
         @Override
         public void onAudioEnabled(DecoderCounters counters) {
-            // Purposefully left blank
+            analyticsCollector.onAudioEnabled(counters);
             if (playerStateReportHelper != null)
                 playerStateReportHelper.setAudioDecoderCounters(counters);
         }
 
         @Override
         public void onAudioDisabled(DecoderCounters counters) {
+            analyticsCollector.onAudioDisabled(counters);
             audioSessionId = C.AUDIO_SESSION_ID_UNSET;
             if (playerStateReportHelper != null)
                 playerStateReportHelper.setAudioDecoderCounters(counters);
@@ -792,15 +1175,17 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
         @Override
         public void onAudioSessionId(int sessionId) {
             audioSessionId = sessionId;
+            analyticsCollector.onAudioSessionId(sessionId);
         }
 
         @Override
         public void onAudioDecoderInitialized(String decoderName, long initializedTimestampMs, long initializationDurationMs) {
-            // Purposefully left blank
+            analyticsCollector.onAudioDecoderInitialized(decoderName, initializedTimestampMs, initializationDurationMs);
         }
 
         @Override
         public void onAudioInputFormatChanged(Format format) {
+            analyticsCollector.onAudioInputFormatChanged(format);
             if (playerStateReportHelper != null)
                 playerStateReportHelper.setAudioFormat(format);
         }
@@ -810,29 +1195,31 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
             if (internalErrorListener != null) {
                 internalErrorListener.onAudioSinkUnderrun(bufferSize, bufferSizeMs, elapsedSinceLastFeedMs);
             }
+            analyticsCollector.onAudioSinkUnderrun(bufferSize, bufferSizeMs, elapsedSinceLastFeedMs);
         }
 
         @Override
         public void onVideoEnabled(DecoderCounters counters) {
-            // Purposefully left blank
+            analyticsCollector.onVideoEnabled(counters);
             if (playerStateReportHelper != null)
                 playerStateReportHelper.setVideoDecoderCounters(counters);
         }
 
         @Override
         public void onVideoDisabled(DecoderCounters counters) {
-            // Purposefully left blank
+            analyticsCollector.onVideoDisabled(counters);
             if (playerStateReportHelper != null)
                 playerStateReportHelper.setVideoDecoderCounters(counters);
         }
 
         @Override
         public void onVideoDecoderInitialized(String decoderName, long initializedTimestampMs, long initializationDurationMs) {
-            // Purposefully left blank
+            analyticsCollector.onVideoDecoderInitialized(decoderName, initializedTimestampMs, initializationDurationMs);
         }
 
         @Override
         public void onVideoInputFormatChanged(Format format) {
+            analyticsCollector.onVideoInputFormatChanged(format);
             if (videoRendererListener != null)
                 videoRendererListener.onVideoInputFormatChanged(format);
             if (playerStateReportHelper != null)
@@ -841,6 +1228,7 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
 
         @Override
         public void onDroppedFrames(int count, long elapsedMs) {
+            analyticsCollector.onDroppedFrames(count, elapsedMs);
             if (videoRendererListener != null)
                 videoRendererListener.onDroppedFrames(count, elapsedMs);
         }
@@ -850,11 +1238,12 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
             for (ExoPlayerListener listener : listeners) {
                 listener.onVideoSizeChanged(width, height, unappliedRotationDegrees, pixelWidthHeightRatio);
             }
+            analyticsCollector.onVideoSizeChanged(width, height, unappliedRotationDegrees, pixelWidthHeightRatio);
         }
 
         @Override
         public void onRenderedFirstFrame(Surface surface) {
-            // Purposefully left blank
+            analyticsCollector.onRenderedFirstFrame(surface);
         }
 
         @Override
@@ -862,6 +1251,7 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
             if (metadataListener != null) {
                 metadataListener.onMetadata(metadata);
             }
+            analyticsCollector.onMetadata(metadata);
         }
 
         @Override

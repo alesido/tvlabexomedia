@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Brian Wernick
+ * Copyright (C) 2015 - 2018 ExoMedia Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Handler;
+
+import androidx.annotation.ColorRes;
 import androidx.annotation.IntRange;
 import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
@@ -40,6 +42,7 @@ import com.devbrackets.android.exomedia.listener.VideoControlsSeekListener;
 import com.devbrackets.android.exomedia.listener.VideoControlsVisibilityListener;
 import com.devbrackets.android.exomedia.util.Repeater;
 import com.devbrackets.android.exomedia.util.ResourceUtil;
+import com.devbrackets.android.exomedia.util.TimeFormatUtil;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -49,7 +52,7 @@ import java.util.List;
  * or remove for the Default Video Controls.
  */
 @SuppressWarnings("unused")
-public abstract class VideoControls extends RelativeLayout {
+public abstract class VideoControls extends RelativeLayout implements VideoControlsCore {
     public static final int DEFAULT_CONTROL_HIDE_DELAY = 2_000;
     protected static final long CONTROL_VISIBILITY_ANIMATION_LENGTH = 300;
 
@@ -100,6 +103,8 @@ public abstract class VideoControls extends RelativeLayout {
     protected boolean canViewHide = true;
     protected boolean hideEmptyTextContainer = true;
 
+    private long lastUpdatedPosition;
+
     /**
      * Sets the current video position, updating the seek bar
      * and the current time field
@@ -119,6 +124,10 @@ public abstract class VideoControls extends RelativeLayout {
     /**
      * Performs the progress update on the current time field,
      * and the seek bar
+     *
+     * @param position The position in milliseconds
+     * @param duration The duration of the video in milliseconds
+     * @param bufferPercent The integer percent that is buffered [0, 100] inclusive
      */
     public abstract void updateProgress(@IntRange(from = 0) long position, @IntRange(from = 0) long duration, @IntRange(from = 0, to = 100) int bufferPercent);
 
@@ -133,6 +142,7 @@ public abstract class VideoControls extends RelativeLayout {
     /**
      * Performs the control visibility animation for showing or hiding
      * this view
+     *
      * @param toVisible True if the view should be visible at the end of the animation
      */
     protected abstract void animateVisibility(boolean toVisible);
@@ -178,6 +188,21 @@ public abstract class VideoControls extends RelativeLayout {
         setup(context);
     }
 
+    /***
+     * Updates the current timestamp
+     *
+     * @param position The position in milliseconds
+     */
+    protected void updateCurrentTime(long position) {
+        // optimization :
+        // update the timestamp text per second regarding the 'reset' or 'seek' operations.
+        if (Math.abs(position - lastUpdatedPosition) >= 1000 || lastUpdatedPosition == 0) {
+            lastUpdatedPosition = position;
+
+            currentTimeTextView.setText(TimeFormatUtil.formatMs(position));
+        }
+    }
+
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
@@ -203,12 +228,26 @@ public abstract class VideoControls extends RelativeLayout {
         progressPollRepeater.setRepeatListener(null);
     }
 
+    @Override
+    public void onAttachedToView(@NonNull VideoView videoView) {
+        videoView.addView(this);
+        setVideoView(videoView);
+    }
+
+    @Override
+    public void onDetachedFromView(@NonNull VideoView videoView) {
+        videoView.removeView(this);
+        setVideoView(null);
+    }
+
     /**
      * Sets the parent view to use for determining playback length, position,
      * state, etc.  This should only be called once, during the setup process
      *
      * @param VideoView The Parent view to these controls
+     * @deprecated Use {@link #onAttachedToView(VideoView)} and {@link #onDetachedFromView(VideoView)}
      */
+    @Deprecated
     public void setVideoView(@Nullable VideoView VideoView) {
         this.videoView = VideoView;
     }
@@ -246,6 +285,7 @@ public abstract class VideoControls extends RelativeLayout {
      *
      * @param isPlaying True if the media is currently playing
      */
+    @Override
     public void updatePlaybackState(boolean isPlaying) {
         updatePlayPauseImage(isPlaying);
         progressPollRepeater.start();
@@ -462,12 +502,22 @@ public abstract class VideoControls extends RelativeLayout {
     /**
      * Immediately starts the animation to show the controls
      */
+    @Override
     public void show() {
         //Makes sure we don't have a hide animation scheduled
         visibilityHandler.removeCallbacksAndMessages(null);
         clearAnimation();
 
         animateVisibility(true);
+    }
+
+    @Override
+    public void hide(boolean delayed) {
+        if (delayed) {
+            hideDelayed();
+        } else {
+            hide();
+        }
     }
 
     /**
@@ -549,6 +599,7 @@ public abstract class VideoControls extends RelativeLayout {
      *
      * @return <code>true</code> if the controls are visible
      */
+    @Override
     public boolean isVisible() {
         return isVisible;
     }
@@ -603,14 +654,18 @@ public abstract class VideoControls extends RelativeLayout {
      * Updates the drawables used for the buttons to AppCompatTintDrawables
      */
     protected void updateButtonDrawables() {
-        playDrawable = ResourceUtil.tintList(getContext(), R.drawable.exomedia_ic_play_arrow_white, R.color.exomedia_default_controls_button_selector);
-        pauseDrawable = ResourceUtil.tintList(getContext(), R.drawable.exomedia_ic_pause_white, R.color.exomedia_default_controls_button_selector);
+        updateButtonDrawables(R.color.exomedia_default_controls_button_selector);
+    }
+
+    protected void updateButtonDrawables(@ColorRes int tintList) {
+        playDrawable = ResourceUtil.tintList(getContext(), R.drawable.exomedia_ic_play_arrow_white, tintList);
+        pauseDrawable = ResourceUtil.tintList(getContext(), R.drawable.exomedia_ic_pause_white, tintList);
         playPauseButton.setImageDrawable(playDrawable);
 
-        Drawable previousDrawable = ResourceUtil.tintList(getContext(), R.drawable.exomedia_ic_skip_previous_white, R.color.exomedia_default_controls_button_selector);
+        Drawable previousDrawable = ResourceUtil.tintList(getContext(), R.drawable.exomedia_ic_skip_previous_white, tintList);
         previousButton.setImageDrawable(previousDrawable);
 
-        Drawable nextDrawable = ResourceUtil.tintList(getContext(), R.drawable.exomedia_ic_skip_next_white, R.color.exomedia_default_controls_button_selector);
+        Drawable nextDrawable = ResourceUtil.tintList(getContext(), R.drawable.exomedia_ic_skip_next_white, tintList);
         nextButton.setImageDrawable(nextDrawable);
     }
 
@@ -661,6 +716,7 @@ public abstract class VideoControls extends RelativeLayout {
 
     /**
      * Determines if the <code>textContainer</code> doesn't have any text associated with it
+     *
      * @return True if there is no text contained in the views in the <code>textContainer</code>
      */
     @SuppressWarnings("RedundantIfStatement")
