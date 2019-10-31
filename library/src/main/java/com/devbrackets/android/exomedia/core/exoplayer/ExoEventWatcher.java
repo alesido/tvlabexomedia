@@ -54,13 +54,13 @@ class ExoEventWatcher extends Player.DefaultEventListener
     @Override
     public void onLoadingChanged(boolean isLoading) {
         super.onLoadingChanged(isLoading);
-        Log.d(TAG, "onLoadingChanged: ");
+        Log.d(TAG, "## onLoadingChanged: " + (isLoading? "continued": "paused"));
     }
 
     @Override
     public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
         super.onPlayerStateChanged(playWhenReady, playbackState);
-        Log.d(TAG, "onPlayerStateChanged: now state: " + getStateString(playbackState));
+        Log.d(TAG, "## onPlayerStateChanged: now state: " + getStateString(playbackState));
     }
 
     @Override
