@@ -24,14 +24,14 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.os.PowerManager;
+import android.util.Log;
+import android.view.Surface;
+
 import androidx.annotation.FloatRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.Size;
 import androidx.collection.ArrayMap;
-
-import android.util.Log;
-import android.view.Surface;
 
 import com.devbrackets.android.exomedia.BuildConfig;
 import com.devbrackets.android.exomedia.ExoMedia;
@@ -42,6 +42,8 @@ import com.devbrackets.android.exomedia.core.listener.InternalErrorListener;
 import com.devbrackets.android.exomedia.core.listener.MetadataListener;
 import com.devbrackets.android.exomedia.core.renderer.RendererProvider;
 import com.devbrackets.android.exomedia.core.source.MediaSourceProvider;
+import com.devbrackets.android.exomedia.core.source.builder.HlsMediaSourceBuilder;
+import com.devbrackets.android.exomedia.core.source.builder.MediaSourceBuilder;
 import com.devbrackets.android.exomedia.listener.OnBufferUpdateListener;
 import com.devbrackets.android.exomedia.util.Repeater;
 import com.google.android.exoplayer2.C;
@@ -71,22 +73,21 @@ import com.google.android.exoplayer2.drm.MediaDrmCallback;
 import com.google.android.exoplayer2.metadata.Metadata;
 import com.google.android.exoplayer2.metadata.MetadataOutput;
 import com.google.android.exoplayer2.source.MediaSource;
-import com.google.android.exoplayer2.source.TrackGroup;
 import com.google.android.exoplayer2.source.MergingMediaSource;
 import com.google.android.exoplayer2.source.SingleSampleMediaSource;
+import com.google.android.exoplayer2.source.TrackGroup;
 import com.google.android.exoplayer2.source.TrackGroupArray;
+import com.google.android.exoplayer2.source.hls.playlist.HlsPlaylistParserFactory;
 import com.google.android.exoplayer2.text.Cue;
 import com.google.android.exoplayer2.text.TextOutput;
 import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.trackselection.MappingTrackSelector;
 import com.google.android.exoplayer2.upstream.BandwidthMeter;
-import com.google.android.exoplayer2.trackselection.TrackSelection;
-import com.google.android.exoplayer2.upstream.BandwidthMeter;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
-import com.google.android.exoplayer2.util.Clock;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
+import com.google.android.exoplayer2.util.Clock;
 import com.google.android.exoplayer2.util.MimeTypes;
 import com.google.android.exoplayer2.util.Util;
 import com.google.android.exoplayer2.video.VideoRendererEventListener;
@@ -175,6 +176,10 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
     @NonNull
     private AnalyticsCollector analyticsCollector;
 
+    // alsi:
+    @Nullable
+    private HlsPlaylistParserFactory hlsPlaylistParserFactory;
+
     public ExoMediaPlayer(@NonNull Context context) {
         this.context = context;
 
@@ -183,12 +188,10 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
 
         mainHandler = new Handler();
 
-        bandwidthMeter = new DefaultBandwidthMeter(mainHandler, new BandwidthMeter.EventListener() {
-            @Override
-            public void onBandwidthSample(int elapsedMs, long bytes, long bitrate) {
-                if (externalBandwidthMeterListener != null)
-                    externalBandwidthMeterListener.onBandwidthSample(elapsedMs, bytes, bitrate);
-            }
+        bandwidthMeter = new DefaultBandwidthMeter.Builder(context).build();
+        bandwidthMeter.addEventListener(mainHandler, (elapsedMs, bytes, bitrate) -> {
+            if (externalBandwidthMeterListener != null)
+                externalBandwidthMeterListener.onBandwidthSample(elapsedMs, bytes, bitrate);
         });
 
         ComponentListener componentListener = new ComponentListener();
@@ -202,7 +205,7 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
         trackSelector = new DefaultTrackSelector(adaptiveTrackSelectionFactory);
 
         LoadControl loadControl = ExoMedia.Data.loadControl != null ? ExoMedia.Data.loadControl : new DefaultLoadControl();
-        player = ExoPlayerFactory.newInstance(renderers.toArray(new Renderer[renderers.size()]), trackSelector, loadControl);
+        player = ExoPlayerFactory.newInstance(context, renderers.toArray(new Renderer[renderers.size()]), trackSelector, loadControl);
         player.addListener(this);
         analyticsCollector = new AnalyticsCollector.Factory().createAnalyticsCollector(player, Clock.DEFAULT);
         player.addListener(analyticsCollector);
@@ -235,8 +238,27 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
         this.drmCallback = drmCallback;
     }
 
+
+    public void customizeHlsPlaylistParserFactory(HlsPlaylistParserFactory hlsPlaylistParserFactory) {
+        this.hlsPlaylistParserFactory = hlsPlaylistParserFactory;
+    }
+
     public void setUri(@Nullable Uri uri) {
-        setMediaSource(uri != null ? ExoMedia.Data.mediaSourceProvider.generate(context, mainHandler, uri, bandwidthMeter) : null);
+        if (null == uri) {
+            setMediaSource(null);
+            return;
+        }
+        MediaSource mediaSource;
+        if (hlsPlaylistParserFactory != null) {
+            MediaSourceBuilder builder = mediaSourceProvider.getBuilder(uri);
+            if (builder instanceof HlsMediaSourceBuilder) {
+                ((HlsMediaSourceBuilder) builder).setCustomPlaylistParserFactory(hlsPlaylistParserFactory);
+            }
+            setMediaSource(mediaSourceProvider.build(builder, context, mainHandler, uri, bandwidthMeter));
+        }
+        else {
+            setMediaSource(mediaSourceProvider.generate(context, mainHandler, uri, bandwidthMeter));
+        }
     }
 
     public void setVideoAndSubtitlesUri(@Nullable Uri videoUri, @Nullable Uri subtitlesUri) {
@@ -245,18 +267,30 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
             return;
         }
 
-        MediaSource videoSource = mediaSourceProvider.generate(context, mainHandler, videoUri, bandwidthMeter);
+        // create media source
+        MediaSource videoSource;
+        if (hlsPlaylistParserFactory != null) {
+            MediaSourceBuilder builder = mediaSourceProvider.getBuilder(videoUri);
+            if (builder instanceof HlsMediaSourceBuilder) {
+                ((HlsMediaSourceBuilder) builder).setCustomPlaylistParserFactory(hlsPlaylistParserFactory);
+            }
+            videoSource = mediaSourceProvider.build(builder, context, mainHandler, videoUri, bandwidthMeter);
+        }
+        else {
+             videoSource = mediaSourceProvider.generate(context, mainHandler, videoUri, bandwidthMeter);
+        }
 
+        // subtitles
         Format subtitleFormat = Format.createTextSampleFormat(null, MimeTypes.APPLICATION_SUBRIP,
                 null, Format.NO_VALUE, Format.NO_VALUE, "en", null,
                 Format.OFFSET_SAMPLE_RELATIVE);
 
-//        Format subtitleFormat = Format.createTextSampleFormat(null, MimeTypes.APPLICATION_SUBRIP, SELECTION_FLAG_FORCED, null);
-
+        // data source
         String userAgent = String.format(Locale.US, "ExoMedia %s (%d) / Android %s / %s", BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE, Build.VERSION.RELEASE, Build.MODEL);
         DataSource.Factory dataSourceFactory = new DefaultDataSourceFactory(context, userAgent);
         MediaSource subtitleSource = new SingleSampleMediaSource(subtitlesUri, dataSourceFactory, subtitleFormat, C.TIME_UNSET);
 
+        // set media source
         setMediaSource(new MergingMediaSource(videoSource, subtitleSource));
     }
 
