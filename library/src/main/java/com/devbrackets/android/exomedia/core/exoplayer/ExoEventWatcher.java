@@ -11,7 +11,7 @@ import java.util.Set;
  * Created on 2/15/18.
  */
 
-class ExoEventWatcher extends Player.DefaultEventListener
+public class ExoEventWatcher extends Player.DefaultEventListener
 {
     public static final String TAG = ExoEventWatcher.class.getSimpleName();
 
@@ -73,7 +73,7 @@ class ExoEventWatcher extends Player.DefaultEventListener
         super.onPositionDiscontinuity(reason);
     }
 
-    private static String getStateString(int state){
+    public static String getStateString(int state){
         switch (state) {
             case Player.STATE_BUFFERING:
                 return "BUFFERING";
