@@ -38,6 +38,7 @@ import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.drm.MediaDrmCallback;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
+import com.google.android.exoplayer2.source.hls.playlist.HlsPlaylistParserFactory;
 
 import java.util.Map;
 
@@ -132,6 +133,11 @@ public class ExoTextureVideoView extends ResizingTextureView implements VideoVie
     @Override
     public void stopPlayback(boolean clearSurface) {
         delegate.stopPlayback(clearSurface);
+    }
+
+    @Override
+    public void customizeHlsPlaylistParserFactory(HlsPlaylistParserFactory hlsPlaylistParserFactory) {
+        delegate.customizeHlsPlaylistParserFactory(hlsPlaylistParserFactory);
     }
 
     @Override

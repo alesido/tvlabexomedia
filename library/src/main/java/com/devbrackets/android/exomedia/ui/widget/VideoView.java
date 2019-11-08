@@ -70,6 +70,7 @@ import com.google.android.exoplayer2.analytics.AnalyticsListener;
 import com.google.android.exoplayer2.drm.MediaDrmCallback;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
+import com.google.android.exoplayer2.source.hls.playlist.HlsPlaylistParserFactory;
 
 import java.util.Map;
 
@@ -334,6 +335,10 @@ public class VideoView extends RelativeLayout {
         }
     }
 
+    public void customizeHlsPlaylistParserFactory(HlsPlaylistParserFactory hlsPlaylistParserFactory) {
+        videoViewImpl.customizeHlsPlaylistParserFactory(hlsPlaylistParserFactory);
+    }
+
     /**
      * Sets the Uri location for the video to play
      *
@@ -348,6 +353,8 @@ public class VideoView extends RelativeLayout {
             videoControls.showLoading(true);
         }
     }
+
+
 
     /**
      * Sets the path to the video.  This path can be a web address (e.g. http://) or
@@ -1168,7 +1175,7 @@ public class VideoView extends RelativeLayout {
 
         @Override
         public void onSeekComplete() {
-            if (videoControls != null) {
+            if (videoControls != null && videoControls.isVisible()) {
                 videoControls.finishLoading();
             }
         }

@@ -53,6 +53,18 @@ public class MediaSourceProvider {
         return builder.build(context, uri, userAgent, handler, transferListener);
     }
 
+    @NonNull
+    public MediaSourceBuilder getBuilder(@NonNull Uri uri) {
+        SourceTypeBuilder sourceTypeBuilder = findByProviders(uri);
+        return sourceTypeBuilder != null ? sourceTypeBuilder.builder : new DefaultMediaSourceBuilder();
+    }
+
+    public MediaSource build(@NonNull MediaSourceBuilder builder, @NonNull Context context,
+                             @NonNull Handler handler, @NonNull Uri uri,
+                             @Nullable TransferListener transferListener ) {
+        return builder.build(context, uri, userAgent, handler, transferListener);
+    }
+
     @Nullable
     protected static SourceTypeBuilder findByProviders(@NonNull Uri uri) {
         // Uri Scheme (e.g. rtsp)

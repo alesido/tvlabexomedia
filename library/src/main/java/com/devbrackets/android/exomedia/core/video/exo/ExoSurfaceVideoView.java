@@ -38,6 +38,7 @@ import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.drm.MediaDrmCallback;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
+import com.google.android.exoplayer2.source.hls.playlist.HlsPlaylistParserFactory;
 
 import java.util.Map;
 
@@ -88,6 +89,12 @@ public class ExoSurfaceVideoView extends ResizingSurfaceView implements VideoVie
     public void setDrmCallback(@Nullable MediaDrmCallback drmCallback) {
         delegate.setDrmCallback(drmCallback);
     }
+
+    @Override
+    public void customizeHlsPlaylistParserFactory(HlsPlaylistParserFactory hlsPlaylistParserFactory) {
+        delegate.customizeHlsPlaylistParserFactory(hlsPlaylistParserFactory);
+    }
+
 
     @Override
     public boolean restart() {

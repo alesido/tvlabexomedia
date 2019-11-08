@@ -44,6 +44,7 @@ import com.google.android.exoplayer2.drm.MediaDrmCallback;
 import com.google.android.exoplayer2.metadata.Metadata;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
+import com.google.android.exoplayer2.source.hls.playlist.HlsPlaylistParserFactory;
 import com.google.android.exoplayer2.text.Cue;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.upstream.BandwidthMeter;
@@ -106,6 +107,10 @@ public class ExoVideoDelegate {
      */
     public void setDrmCallback(@Nullable MediaDrmCallback drmCallback) {
         exoMediaPlayer.setDrmCallback(drmCallback);
+    }
+
+    public void customizeHlsPlaylistParserFactory(HlsPlaylistParserFactory hlsPlaylistParserFactory) {
+        exoMediaPlayer.customizeHlsPlaylistParserFactory(hlsPlaylistParserFactory);
     }
 
     public boolean restart() {

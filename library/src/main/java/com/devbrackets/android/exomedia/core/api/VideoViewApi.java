@@ -32,6 +32,7 @@ import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.drm.MediaDrmCallback;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
+import com.google.android.exoplayer2.source.hls.playlist.HlsPlaylistParserFactory;
 
 import java.util.Map;
 
@@ -88,6 +89,8 @@ public interface VideoViewApi {
      * @param clearSurface <code>true</code> if the surface should be cleared
      */
     void stopPlayback(boolean clearSurface);
+
+    void customizeHlsPlaylistParserFactory(HlsPlaylistParserFactory hlsPlaylistParserFactory);
 
     /**
      * Prepares the media previously specified for playback.  This should only be called after

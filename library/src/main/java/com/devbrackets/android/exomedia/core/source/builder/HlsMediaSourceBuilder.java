@@ -23,17 +23,30 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.hls.HlsDataSourceFactory;
 import com.google.android.exoplayer2.source.hls.HlsMediaSource;
+import com.google.android.exoplayer2.source.hls.playlist.HlsPlaylistParserFactory;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.TransferListener;
 
 public class HlsMediaSourceBuilder extends MediaSourceBuilder {
+
+    private HlsPlaylistParserFactory customPlaylistParserFactory;
+
     @NonNull
     @Override
     public MediaSource build(@NonNull Context context, @NonNull Uri uri, @NonNull String userAgent, @NonNull Handler handler, @Nullable TransferListener transferListener) {
         DataSource.Factory dataSourceFactory = buildDataSourceFactory(context, userAgent, transferListener);
 
-        return new HlsMediaSource.Factory(dataSourceFactory)
-                .createMediaSource(uri);
+        HlsMediaSource.Factory hlsMediaSourceFactory = new HlsMediaSource.Factory(dataSourceFactory);
+        if (customPlaylistParserFactory != null) {
+            hlsMediaSourceFactory.setPlaylistParserFactory(customPlaylistParserFactory);
+        }
+
+        return hlsMediaSourceFactory.createMediaSource(uri);
+    }
+
+    public void setCustomPlaylistParserFactory(HlsPlaylistParserFactory customPlaylistParserFactory) {
+        this.customPlaylistParserFactory = customPlaylistParserFactory;
     }
 }
