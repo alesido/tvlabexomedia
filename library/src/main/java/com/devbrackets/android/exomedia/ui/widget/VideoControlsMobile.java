@@ -151,6 +151,16 @@ public class VideoControlsMobile extends VideoControls {
     }
 
     @Override
+    public long getStartGapEndPosition() {
+        return 0;
+    }
+
+    @Override
+    public void setStartGapEndPosition(long position) {
+
+    }
+
+    @Override
     protected void animateVisibility(boolean toVisible) {
         if (isVisible == toVisible) {
             return;

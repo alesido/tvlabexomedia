@@ -28,6 +28,7 @@ import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.SparseBooleanArray;
 import android.view.View;
 import android.view.ViewGroup;
@@ -287,6 +288,7 @@ public abstract class VideoControls extends RelativeLayout implements VideoContr
      */
     @Override
     public void updatePlaybackState(boolean isPlaying) {
+        Log.d("VideoControls", "## @updatePlaybackState, isPlaying: " + (isPlaying? "true": "false"));
         updatePlayPauseImage(isPlaying);
         progressPollRepeater.start();
 
@@ -528,6 +530,8 @@ public abstract class VideoControls extends RelativeLayout implements VideoContr
             return;
         }
 
+        Log.d("VideoControls", "@hide, before animateVisibility");
+
         //Makes sure we don't have a separate hide animation scheduled
         visibilityHandler.removeCallbacksAndMessages(null);
         clearAnimation();
@@ -559,6 +563,7 @@ public abstract class VideoControls extends RelativeLayout implements VideoContr
         visibilityHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
+                Log.d("VideoControls", "@postDelayed#run: hide");
                 hide();
             }
         }, delay);
@@ -603,6 +608,10 @@ public abstract class VideoControls extends RelativeLayout implements VideoContr
     public boolean isVisible() {
         return isVisible;
     }
+
+    public abstract long getStartGapEndPosition();
+
+    public abstract void setStartGapEndPosition(long position);
 
     /**
      * Retrieves the view references from the xml layout
