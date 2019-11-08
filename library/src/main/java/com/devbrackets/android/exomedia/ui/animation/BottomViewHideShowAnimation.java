@@ -20,6 +20,7 @@ import android.content.Context;
 import androidx.interpolator.view.animation.FastOutLinearInInterpolator;
 import androidx.interpolator.view.animation.LinearOutSlowInInterpolator;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Display;
 import android.view.View;
 import android.view.WindowManager;
@@ -40,6 +41,8 @@ public class BottomViewHideShowAnimation extends AnimationSet {
         super(false);
         this.toVisible = toVisible;
         this.animationView = view;
+
+        Log.d("BVHSA","## " + (toVisible? "animate to SHOW": "animate to HIDE"));
 
         //Creates the Alpha animation for the transition
         float startAlpha = toVisible ? 0 : 1;
@@ -83,6 +86,7 @@ public class BottomViewHideShowAnimation extends AnimationSet {
         @Override
         public void onAnimationEnd(Animation animation) {
             animationView.setVisibility(toVisible ? View.VISIBLE : View.GONE);
+            Log.d("BVHSA","## onAnimationEnd");
         }
 
         @Override

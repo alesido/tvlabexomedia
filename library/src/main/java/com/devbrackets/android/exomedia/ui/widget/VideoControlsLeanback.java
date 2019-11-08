@@ -22,6 +22,7 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import androidx.annotation.IntRange;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -210,11 +211,13 @@ public class VideoControlsLeanback extends VideoControls {
 
     @Override
     protected void animateVisibility(boolean toVisible) {
+        Log.d("VideoControls", "@animateVisibility, " + (toVisible? "SHOW": "hide"));
         if (isVisible == toVisible) {
             return;
         }
 
         if (!isLoading) {
+            Log.d("VideoControls", "@animateVisibility, startAnimation");
             controlsParent.startAnimation(new BottomViewHideShowAnimation(controlsParent, toVisible, CONTROL_VISIBILITY_ANIMATION_LENGTH));
         }
 
@@ -552,5 +555,15 @@ public class VideoControlsLeanback extends VideoControls {
             performSeek(newPosition);
             return true;
         }
+    }
+
+    @Override
+    public long getStartGapEndPosition() {
+        return 0;
+    }
+
+    @Override
+    public void setStartGapEndPosition(long position) {
+
     }
 }
