@@ -252,6 +252,11 @@ public class VideoControlsLeanback extends VideoControls {
         rippleIndicator.setVisibility(View.GONE);
         loadingProgressBar.setVisibility(View.VISIBLE);
 
+        if (initialLoad) {
+            currentTimeTextView.setVisibility(GONE);
+            endTimeTextView.setVisibility(GONE);
+        }
+
         show();
     }
 
@@ -265,6 +270,9 @@ public class VideoControlsLeanback extends VideoControls {
         controlsContainer.setVisibility(View.VISIBLE);
         rippleIndicator.setVisibility(View.VISIBLE);
         loadingProgressBar.setVisibility(View.GONE);
+
+        currentTimeTextView.setVisibility(VISIBLE);
+        endTimeTextView.setVisibility(VISIBLE);
 
         updatePlaybackState(videoView != null && videoView.isPlaying());
     }

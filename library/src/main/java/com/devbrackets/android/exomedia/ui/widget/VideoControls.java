@@ -105,6 +105,7 @@ public abstract class VideoControls extends RelativeLayout implements VideoContr
     protected boolean hideEmptyTextContainer = true;
 
     private long lastUpdatedPosition;
+    private boolean suspendPlaybackProgressUpdate = false;
 
     /**
      * Sets the current video position, updating the seek bar
@@ -209,12 +210,7 @@ public abstract class VideoControls extends RelativeLayout implements VideoContr
         super.onAttachedToWindow();
 
         //A poll used to periodically update the progress bar
-        progressPollRepeater.setRepeatListener(new Repeater.RepeatListener() {
-            @Override
-            public void onRepeat() {
-                updateProgress();
-            }
-        });
+        progressPollRepeater.setRepeatListener(this::updateProgress);
 
         if (videoView != null && videoView.isPlaying()) {
             updatePlaybackState(true);
@@ -230,15 +226,19 @@ public abstract class VideoControls extends RelativeLayout implements VideoContr
     }
 
     @Override
-    public void onAttachedToView(@NonNull VideoView videoView) {
-        videoView.addView(this);
-        setVideoView(videoView);
+    public void onAttachedToView(@NonNull VideoView videoView, boolean... options) {
+        boolean hasAnotherParent = options.length > 0 && options[0];
+        if (!hasAnotherParent)
+            videoView.addView(this);
+        _setVideoView(videoView);
     }
 
     @Override
-    public void onDetachedFromView(@NonNull VideoView videoView) {
-        videoView.removeView(this);
-        setVideoView(null);
+    public void onDetachedFromView(@NonNull VideoView videoView, boolean... options) {
+        boolean hasAnotherParent = options.length > 0 && options[0];
+        if (!hasAnotherParent)
+            videoView.removeView(this);
+        _setVideoView(null);
     }
 
     /**
@@ -246,10 +246,14 @@ public abstract class VideoControls extends RelativeLayout implements VideoContr
      * state, etc.  This should only be called once, during the setup process
      *
      * @param VideoView The Parent view to these controls
-     * @deprecated Use {@link #onAttachedToView(VideoView)} and {@link #onDetachedFromView(VideoView)}
+     * @deprecated Use {@link #onAttachedToView(VideoView, boolean...)} and {@link #onDetachedFromView(VideoView, boolean...)}
      */
     @Deprecated
     public void setVideoView(@Nullable VideoView VideoView) {
+        this.videoView = VideoView;
+    }
+
+    private void _setVideoView(@Nullable VideoView VideoView) {
         this.videoView = VideoView;
     }
 
@@ -291,12 +295,29 @@ public abstract class VideoControls extends RelativeLayout implements VideoContr
         Log.d("VideoControls", "## @updatePlaybackState, isPlaying: " + (isPlaying? "true": "false"));
         updatePlayPauseImage(isPlaying);
         progressPollRepeater.start();
+        resumePlaybackProgressUpdate();
 
         if (isPlaying) {
             hideDelayed();
         } else {
             show();
         }
+    }
+
+    public void suspendPlaybackProgressUpdate() {
+        suspendPlaybackProgressUpdate = true;
+    }
+
+    public void resumePlaybackProgressUpdate() {
+        suspendPlaybackProgressUpdate = false;
+    }
+
+    @Override
+    public void setPlaybackStoppedState() {
+        Log.d("VideoControls", "## @setPlaybackStoppedState");
+        updatePlayPauseImage(false);
+        suspendPlaybackProgressUpdate();
+        show();
     }
 
     /**
@@ -560,12 +581,9 @@ public abstract class VideoControls extends RelativeLayout implements VideoContr
             return;
         }
 
-        visibilityHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                Log.d("VideoControls", "@postDelayed#run: hide");
-                hide();
-            }
+        visibilityHandler.postDelayed(() -> {
+            Log.d("VideoControls", "@postDelayed#run: hide");
+            hide();
         }, delay);
     }
 
@@ -766,8 +784,14 @@ public abstract class VideoControls extends RelativeLayout implements VideoContr
      * bar using the {@link #videoView} to retrieve the correct information
      */
     protected void updateProgress() {
-        if (videoView != null) {
+        if (videoView != null && ! suspendPlaybackProgressUpdate) {
             updateProgress(videoView.getCurrentPosition(), videoView.getDuration(), videoView.getBufferPercentage());
+        }
+    }
+
+    public void startProgressUpdate() {
+        if (isAttachedToWindow()) {
+            updateProgress();
         }
     }
 

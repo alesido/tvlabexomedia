@@ -257,14 +257,15 @@ public class VideoView extends RelativeLayout {
         setOnTouchListener(videoControls != null ? new TouchListener(getContext()) : null);
     }
 
-    public void setControls(@Nullable VideoControlsCore controls) {
+    public void setControls(@Nullable VideoControlsCore controls, boolean ... options) {
+        boolean hasAnotherParent = options.length > 0 && options[0];
         if (videoControls != null && videoControls != controls) {
-            videoControls.onDetachedFromView(this);
+            videoControls.onDetachedFromView(this, hasAnotherParent);
         }
 
         videoControls = controls;
         if (videoControls != null) {
-            videoControls.onAttachedToView(this);
+            videoControls.onAttachedToView(this, hasAnotherParent);
         }
 
         //Sets the onTouch listener to show the controls
@@ -1032,7 +1033,8 @@ public class VideoView extends RelativeLayout {
         setKeepScreenOn(false);
 
         if (videoControls != null) {
-            videoControls.updatePlaybackState(false);
+            //videoControls.updatePlaybackState(false);
+            videoControls.setPlaybackStoppedState();
         }
     }
 

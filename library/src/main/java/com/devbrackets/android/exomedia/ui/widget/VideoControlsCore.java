@@ -34,16 +34,20 @@ public interface VideoControlsCore {
      * {@link VideoView}.
      *
      * @param videoView The {@link VideoView} that the controls are attached to
+     * @param options Primarily to allow another parent for the video controls
      */
-    void onAttachedToView(@NonNull VideoView videoView);
+    void onAttachedToView(@NonNull VideoView videoView, boolean... options);
 
     /**
      * Called when the controls have been cleaned up on the {@link VideoView}
      * side in preparation for detachment.
      *
      * @param videoView The {@link VideoView} that the controls are detaching from
+     * @param options Primarily to allow another parent for the video controls
      */
-    void onDetachedFromView(@NonNull VideoView videoView);
+    void onDetachedFromView(@NonNull VideoView videoView, boolean... options);
+
+    void setPlaybackStoppedState();
 
     /**
      * Shows the controls immediately
