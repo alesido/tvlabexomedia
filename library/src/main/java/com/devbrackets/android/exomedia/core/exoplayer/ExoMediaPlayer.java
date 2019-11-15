@@ -180,6 +180,10 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
     @Nullable
     private HlsPlaylistParserFactory hlsPlaylistParserFactory;
 
+    // alsi:
+    @Nullable
+    private String preferredAudioLanguage;
+
     public ExoMediaPlayer(@NonNull Context context) {
         this.context = context;
 
@@ -238,9 +242,17 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
         this.drmCallback = drmCallback;
     }
 
-
     public void customizeHlsPlaylistParserFactory(HlsPlaylistParserFactory hlsPlaylistParserFactory) {
         this.hlsPlaylistParserFactory = hlsPlaylistParserFactory;
+    }
+
+    @Nullable
+    public String getPreferredAudioLanguage() {
+        return preferredAudioLanguage;
+    }
+
+    public void setPreferredAudioLanguage(@Nullable String preferredAudioLanguage) {
+        this.preferredAudioLanguage = preferredAudioLanguage;
     }
 
     public void setUri(@Nullable Uri uri) {
@@ -520,6 +532,9 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
         }
 
         DefaultTrackSelector.ParametersBuilder parametersBuilder = trackSelector.buildUponParameters();
+        if (preferredAudioLanguage != null) {
+            parametersBuilder.setPreferredAudioLanguage(preferredAudioLanguage);
+        }
         for (int rendererTrackIndex : tracksInfo.rendererTrackIndexes) {
             parametersBuilder.clearSelectionOverrides(rendererTrackIndex);
             if (tracksInfo.rendererTrackIndex == rendererTrackIndex) {
