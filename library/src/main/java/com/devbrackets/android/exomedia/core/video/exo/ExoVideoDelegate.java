@@ -275,6 +275,20 @@ public class ExoVideoDelegate {
         exoMediaPlayer.setRepeatMode(repeatMode);
     }
 
+    // alsi++
+    public void enableHealthMonitor(boolean enable) {
+        if (enable) {
+            exoMediaPlayer.setBandwidthMeterListener(internalListeners);
+            exoMediaPlayer.setVideoRendererListener(internalListeners);
+            exoMediaPlayer.setPlayerStateReportListener(internalListeners);
+        }
+        else {
+            exoMediaPlayer.setBandwidthMeterListener(null);
+            exoMediaPlayer.setVideoRendererListener(null);
+            exoMediaPlayer.setPlayerStateReportListener(null);
+        }
+    }
+
     public void onSurfaceReady(Surface surface) {
         exoMediaPlayer.setSurface(surface);
         if (playRequested) {
@@ -297,9 +311,6 @@ public class ExoVideoDelegate {
         exoMediaPlayer.setBufferUpdateListener(internalListeners);
 
         // alsi++
-        exoMediaPlayer.setBandwidthMeterListener(internalListeners);
-        exoMediaPlayer.setVideoRendererListener(internalListeners);
-        exoMediaPlayer.setPlayerStateReportListener(internalListeners);
         exoMediaPlayer.addPlayerEventListener(internalListeners);
 
         // als+++

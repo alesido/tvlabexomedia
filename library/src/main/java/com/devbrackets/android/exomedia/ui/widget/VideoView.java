@@ -913,6 +913,11 @@ public class VideoView extends RelativeLayout {
         return null;
     }
 
+    public void enableHealthMonitor(boolean enable) {
+        videoViewImpl.enableHealthMonitor(enable);
+    }
+
+
     /**
      * Performs the functionality to setup the initial properties including
      * determining the backing implementation and reading xml attributes

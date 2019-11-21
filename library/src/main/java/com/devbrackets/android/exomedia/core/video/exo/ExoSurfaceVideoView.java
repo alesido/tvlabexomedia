@@ -247,6 +247,11 @@ public class ExoSurfaceVideoView extends ResizingSurfaceView implements VideoVie
         delegate.setRepeatMode(repeatMode);
     }
 
+    @Override
+    public void enableHealthMonitor(boolean enable) {
+        delegate.enableHealthMonitor(enable);
+    }
+
     protected void setup() {
         delegate = new ExoVideoDelegate(getContext(), this);
 

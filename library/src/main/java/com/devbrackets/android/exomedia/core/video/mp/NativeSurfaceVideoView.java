@@ -275,6 +275,11 @@ public class NativeSurfaceVideoView extends ResizingSurfaceView implements Nativ
         // Purposefully left blank
     }
 
+    @Override
+    public void enableHealthMonitor(boolean enable) {
+
+    }
+
     /**
      * Cleans up the resources being held.  This should only be called when
      * destroying the video view

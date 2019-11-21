@@ -193,4 +193,6 @@ public interface VideoViewApi {
     void onVideoSizeChanged(int width, int height, float pixelWidthHeightRatio);
 
     void setRepeatMode(@Player.RepeatMode int repeatMode);
+
+    void enableHealthMonitor(boolean enable);
 }
