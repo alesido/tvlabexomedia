@@ -18,8 +18,8 @@ dependencies {
     implementation project(':library')
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
 
-    implementation "com.android.support:appcompat-v7:$rootProject.ext.supportLibVersion"
-    implementation "com.android.support:support-media-compat:$rootProject.ext.supportLibVersion"
+    implementation 'androidx.appcompat:appcompat:1.0.0'
+    implementation 'androidx.media:media:1.0.0'
     implementation "com.google.android.exoplayer:extension-okhttp:$rootProject.ext.exoPlayerVersion"
 
     // Image Loading
@@ -38,7 +38,7 @@ android {
 
     defaultConfig {
         applicationId "com.devbrackets.android.exomediademo"
-        minSdkVersion 16
+        minSdkVersion 19
         targetSdkVersion 28
         versionCode 1
         versionName "1.0.0"
