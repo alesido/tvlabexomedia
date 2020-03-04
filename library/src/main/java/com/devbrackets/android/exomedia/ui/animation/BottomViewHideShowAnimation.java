@@ -86,7 +86,7 @@ public class BottomViewHideShowAnimation extends AnimationSet {
         @Override
         public void onAnimationEnd(Animation animation) {
             animationView.setVisibility(toVisible ? View.VISIBLE : View.GONE);
-            Log.d("BVHSA","## onAnimationEnd");
+            Log.d("BVHSA","## onAnimationEnd, set to " + (toVisible ? "VISIBLE" : "GONE"));
         }
 
         @Override

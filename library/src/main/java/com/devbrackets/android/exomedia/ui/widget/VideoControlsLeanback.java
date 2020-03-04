@@ -98,6 +98,10 @@ public class VideoControlsLeanback extends VideoControls {
         progressBar.setProgress((int) position);
     }
 
+    public Long getPostponedSeekPosition() {
+        return null;
+    }
+
     @Override
     public void setDuration(long duration) {
         //if (duration != progressBar.getMax()) {
