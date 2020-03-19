@@ -188,7 +188,7 @@ public class VideoControlsMobile extends VideoControls {
         if (hideEmptyTextContainer && emptyText && textContainer.getVisibility() == VISIBLE) {
             textContainer.clearAnimation();
             textContainer.startAnimation(new TopViewHideShowAnimation(textContainer, false, CONTROL_VISIBILITY_ANIMATION_LENGTH));
-        } else if ((!hideEmptyTextContainer || !emptyText) && textContainer.getVisibility() != VISIBLE) {
+        } else if ((!hideEmptyTextContainer || !emptyText)) { // && textContainer.getVisibility() != VISIBLE) {
             textContainer.clearAnimation();
             textContainer.startAnimation(new TopViewHideShowAnimation(textContainer, true, CONTROL_VISIBILITY_ANIMATION_LENGTH));
         }
