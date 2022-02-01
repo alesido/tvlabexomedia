@@ -553,6 +553,10 @@ public class VideoView extends RelativeLayout {
         return videoViewImpl.getDuration();
     }
 
+    public long getRealDuration() {
+        return videoViewImpl.getDuration();
+    }
+
     /**
      * Setting this will override the duration that the item may actually be.  This method should
      * only be used when the item doesn't return the correct duration such as with audio streams.
@@ -1182,6 +1186,7 @@ public class VideoView extends RelativeLayout {
 
         @Override
         public void onSeekComplete() {
+            Log.d("VideoView", "## onSeekComplete");
             if (videoControls != null && videoControls.isVisible()) {
                 videoControls.finishLoading();
             }

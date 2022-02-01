@@ -298,7 +298,8 @@ public class ExoMediaPlayer extends Player.DefaultEventListener {
                 Format.OFFSET_SAMPLE_RELATIVE);
 
         // data source
-        String userAgent = String.format(Locale.US, "ExoMedia %s (%d) / Android %s / %s", BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE, Build.VERSION.RELEASE, Build.MODEL);
+//        String userAgent = String.format(Locale.US, "ExoMedia %s (%d) / Android %s / %s", BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE, Build.VERSION.RELEASE, Build.MODEL);
+        String userAgent = "ExoMedia 4.3.0";
         DataSource.Factory dataSourceFactory = new DefaultDataSourceFactory(context, userAgent);
         MediaSource subtitleSource = new SingleSampleMediaSource(subtitlesUri, dataSourceFactory, subtitleFormat, C.TIME_UNSET);
 

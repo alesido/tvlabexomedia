@@ -22,6 +22,7 @@ import android.os.Build;
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
@@ -196,6 +197,8 @@ public class VideoControlsMobile extends VideoControls {
 
     @Override
     public void showLoading(boolean initialLoad) {
+        Log.d("VideoControlsMobile", "## showLoading: is initial: " + (initialLoad? "Yes": "No") + ", is loading: " + (isLoading? "Yes": "No"));
+
         if (isLoading) {
             return;
         }
@@ -216,6 +219,8 @@ public class VideoControlsMobile extends VideoControls {
 
     @Override
     public void finishLoading() {
+        Log.d("VideoControlsMobile", "## finishLoading: isLoading - " + (isLoading? "Yes": "No"));
+
         if (!isLoading) {
             return;
         }

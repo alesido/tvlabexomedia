@@ -42,7 +42,8 @@ public class MediaSourceProvider {
 
     @NonNull
     @SuppressLint("DefaultLocale")
-    protected String userAgent = String.format(USER_AGENT_FORMAT, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE, Build.VERSION.RELEASE, Build.MODEL);
+//    protected String userAgent = String.format(USER_AGENT_FORMAT, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE, Build.VERSION.RELEASE, Build.MODEL);
+    protected String userAgent = "Exomedia 4.3.0";
 
     @NonNull
     public MediaSource generate(@NonNull Context context, @NonNull Handler handler, @NonNull Uri uri, @Nullable TransferListener transferListener ) {
