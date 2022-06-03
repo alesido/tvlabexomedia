@@ -22,6 +22,7 @@ import android.os.Handler;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.dash.DashMediaSource;
 import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource;
@@ -36,6 +37,6 @@ public class DashMediaSourceBuilder extends MediaSourceBuilder {
         DataSource.Factory meteredDataSourceFactory = buildDataSourceFactory(context, userAgent, transferListener);
 
         return new DashMediaSource.Factory(new DefaultDashChunkSource.Factory(meteredDataSourceFactory), dataSourceFactory)
-                .createMediaSource(uri);
+                .createMediaSource(MediaItem.fromUri(uri));
     }
 }

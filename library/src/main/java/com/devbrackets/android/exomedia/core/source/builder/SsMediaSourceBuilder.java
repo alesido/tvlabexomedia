@@ -22,6 +22,7 @@ import android.os.Handler;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.smoothstreaming.DefaultSsChunkSource;
 import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource;
@@ -36,6 +37,6 @@ public class SsMediaSourceBuilder extends MediaSourceBuilder {
         DataSource.Factory meteredDataSourceFactory = buildDataSourceFactory(context, userAgent, transferListener);
 
         return new SsMediaSource.Factory(new DefaultSsChunkSource.Factory(meteredDataSourceFactory), dataSourceFactory)
-                .createMediaSource(uri);
+                .createMediaSource(MediaItem.fromUri(uri));
     }
 }

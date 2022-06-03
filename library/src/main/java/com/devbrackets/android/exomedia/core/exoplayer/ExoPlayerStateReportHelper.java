@@ -4,6 +4,8 @@ import android.annotation.SuppressLint;
 import android.os.Handler;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.Format;
 import com.google.android.exoplayer2.Player;
@@ -15,7 +17,7 @@ import java.util.Locale;
 /**
  * A helper class for periodically report with debug information obtained from player.
  */
-public final class ExoPlayerStateReportHelper extends Player.DefaultEventListener implements Runnable {
+public final class ExoPlayerStateReportHelper implements Player.Listener, Runnable {
 
     private static final int REFRESH_INTERVAL_MS = 1000;
 
@@ -67,12 +69,13 @@ public final class ExoPlayerStateReportHelper extends Player.DefaultEventListene
     // Player.EventListener implementation.
 
     @Override
-    public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
+    public void onPlaybackStateChanged(int playbackState) {
         updateAndPost();
     }
 
     @Override
-    public void onPositionDiscontinuity(@Player.DiscontinuityReason int reason) {
+    public void onPositionDiscontinuity(@NonNull Player.PositionInfo oldPosition,
+                                        @NonNull Player.PositionInfo newPosition, int reason) {
         updateAndPost();
     }
 

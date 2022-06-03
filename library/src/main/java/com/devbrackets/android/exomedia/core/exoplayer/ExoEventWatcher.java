@@ -11,7 +11,7 @@ import java.util.Set;
  * Created on 2/15/18.
  */
 
-public class ExoEventWatcher extends Player.DefaultEventListener
+public class ExoEventWatcher implements Player.Listener
 {
     public static final String TAG = ExoEventWatcher.class.getSimpleName();
 
@@ -52,25 +52,13 @@ public class ExoEventWatcher extends Player.DefaultEventListener
     }
 
     @Override
-    public void onLoadingChanged(boolean isLoading) {
-        super.onLoadingChanged(isLoading);
+    public void onIsLoadingChanged(boolean isLoading) {
         Log.d(TAG, "## onLoadingChanged: " + (isLoading? "continued": "paused"));
     }
 
     @Override
-    public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-        super.onPlayerStateChanged(playWhenReady, playbackState);
+    public void onPlaybackStateChanged(int playbackState) {
         Log.d(TAG, "## onPlayerStateChanged: now state: " + getStateString(playbackState));
-    }
-
-    @Override
-    public void onSeekProcessed() {
-        super.onSeekProcessed();
-    }
-
-    @Override
-    public void onPositionDiscontinuity(int reason) {
-        super.onPositionDiscontinuity(reason);
     }
 
     public static String getStateString(int state){

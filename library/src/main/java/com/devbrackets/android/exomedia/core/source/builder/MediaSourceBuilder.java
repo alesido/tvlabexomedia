@@ -26,7 +26,7 @@ import com.devbrackets.android.exomedia.ExoMedia;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
-import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory;
+import com.google.android.exoplayer2.upstream.DefaultHttpDataSource;
 import com.google.android.exoplayer2.upstream.TransferListener;
 
 public abstract class MediaSourceBuilder {
@@ -47,7 +47,7 @@ public abstract class MediaSourceBuilder {
 
         // If no factory was provided use the default one
         if (dataSourceFactory == null) {
-            dataSourceFactory = new DefaultHttpDataSourceFactory(userAgent, listener);
+            dataSourceFactory = new DefaultHttpDataSource.Factory();
         }
 
         return new DefaultDataSourceFactory(context, listener, dataSourceFactory);

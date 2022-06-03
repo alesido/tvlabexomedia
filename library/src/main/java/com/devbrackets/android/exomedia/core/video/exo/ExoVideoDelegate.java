@@ -40,6 +40,7 @@ import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.decoder.DecoderCounters;
+import com.google.android.exoplayer2.decoder.DecoderReuseEvaluation;
 import com.google.android.exoplayer2.drm.MediaDrmCallback;
 import com.google.android.exoplayer2.metadata.Metadata;
 import com.google.android.exoplayer2.source.MediaSource;
@@ -49,6 +50,7 @@ import com.google.android.exoplayer2.text.Cue;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.upstream.BandwidthMeter;
 import com.google.android.exoplayer2.video.VideoRendererEventListener;
+import com.google.android.exoplayer2.video.VideoSize;
 
 import java.util.List;
 import java.util.Map;
@@ -319,7 +321,7 @@ public class ExoVideoDelegate {
 
     protected class InternalListeners implements CaptionListener, MetadataListener, OnBufferUpdateListener,
             BandwidthMeter.EventListener, VideoRendererEventListener, ExoPlayerStateReportListener,
-            Player.EventListener {
+            Player.Listener {
 
         /** alsi+++ Caption listener callback
          */
@@ -358,7 +360,8 @@ public class ExoVideoDelegate {
         }
 
         @Override
-        public void onVideoInputFormatChanged(Format format) {
+        public void onVideoInputFormatChanged(
+                Format format, @Nullable DecoderReuseEvaluation decoderReuseEvaluation) {
             if (listenerMux != null)
                 listenerMux.onVideoInputFormatChanged(format);
         }
@@ -370,12 +373,7 @@ public class ExoVideoDelegate {
         }
 
         @Override
-        public void onVideoSizeChanged(int width, int height, int unappliedRotationDegrees, float pixelWidthHeightRatio) {
-            // left empty as not applicable
-        }
-
-        @Override
-        public void onRenderedFirstFrame(Surface surface) {
+        public void onVideoSizeChanged(VideoSize videoSize) {
             // left empty as not applicable
         }
 
@@ -407,7 +405,7 @@ public class ExoVideoDelegate {
         }
 
         @Override
-        public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
+        public void onPlaybackStateChanged(int playbackState) {
             if (listenerMux != null)
                 listenerMux.onPlayerStateChanged(playbackState);
         }
@@ -423,12 +421,8 @@ public class ExoVideoDelegate {
         }
 
         @Override
-        public void onPlayerError(ExoPlaybackException error) {
-            // reserved for possible future implementation
-        }
-
-        @Override
-        public void onPositionDiscontinuity(int reason) {
+        public void onPositionDiscontinuity(@NonNull Player.PositionInfo oldPosition,
+                                            @NonNull Player.PositionInfo newPosition, int reason) {
             // reserved for possible future implementation
         }
 

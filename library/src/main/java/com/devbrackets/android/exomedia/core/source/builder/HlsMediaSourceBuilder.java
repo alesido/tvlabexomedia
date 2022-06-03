@@ -22,6 +22,7 @@ import android.os.Handler;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.hls.HlsDataSourceFactory;
 import com.google.android.exoplayer2.source.hls.HlsMediaSource;
@@ -43,7 +44,7 @@ public class HlsMediaSourceBuilder extends MediaSourceBuilder {
             hlsMediaSourceFactory.setPlaylistParserFactory(customPlaylistParserFactory);
         }
 
-        return hlsMediaSourceFactory.createMediaSource(uri);
+        return hlsMediaSourceFactory.createMediaSource(MediaItem.fromUri(uri));
     }
 
     public void setCustomPlaylistParserFactory(HlsPlaylistParserFactory customPlaylistParserFactory) {
