@@ -20,8 +20,12 @@ static def getLibraryInfo() {
 }
 
 dependencies {
-    implementation "androidx.media:media:1.1.0-alpha04"
-    implementation "androidx.appcompat:appcompat:1.1.0-alpha04"
+    runtimeOnly 'androidx.media:media:1.6.0'
+    runtimeOnly "androidx.appcompat:appcompat:1.6.0-alpha03"
+    runtimeOnly 'androidx.interpolator:interpolator:1.0.0'
+
+    implementation 'androidx.annotation:annotation:1.4.0-alpha02'
+    implementation "androidx.appcompat:appcompat:1.6.0-alpha03"
 
     // ExoPlayer
     api "com.google.android.exoplayer:exoplayer-core:$rootProject.ext.exoPlayerVersion"
@@ -31,14 +35,12 @@ dependencies {
 }
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion 31
 
     defaultConfig {
         minSdkVersion 19
-        targetSdkVersion 28
+        targetSdkVersion 31
 
-        versionCode getLibraryInfo().versionCode
-        versionName getLibraryInfo().versionName
 
         vectorDrawables.useSupportLibrary = true
     }

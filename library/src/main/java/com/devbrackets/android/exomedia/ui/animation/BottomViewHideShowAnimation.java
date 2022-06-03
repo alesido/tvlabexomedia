@@ -17,8 +17,6 @@
 package com.devbrackets.android.exomedia.ui.animation;
 
 import android.content.Context;
-import androidx.interpolator.view.animation.FastOutLinearInInterpolator;
-import androidx.interpolator.view.animation.LinearOutSlowInInterpolator;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
@@ -28,6 +26,9 @@ import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
 import android.view.animation.TranslateAnimation;
+
+import androidx.interpolator.view.animation.FastOutLinearInInterpolator;
+import androidx.interpolator.view.animation.LinearOutSlowInInterpolator;
 
 /**
  * An animation used to slide {@link com.devbrackets.android.exomedia.ui.widget.VideoControls}
