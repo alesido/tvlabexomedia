@@ -18,7 +18,6 @@ package com.devbrackets.android.exomedia.core;
 
 import android.media.MediaPlayer;
 import android.os.Handler;
-import android.view.Surface;
 
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
@@ -36,18 +35,19 @@ import com.devbrackets.android.exomedia.listener.OnEarlyCompletionListener;
 import com.devbrackets.android.exomedia.listener.OnErrorListener;
 import com.devbrackets.android.exomedia.listener.OnPreparedListener;
 import com.devbrackets.android.exomedia.listener.OnSeekCompletionListener;
-import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.Format;
+import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
+import com.google.android.exoplayer2.TracksInfo;
 import com.google.android.exoplayer2.analytics.AnalyticsListener;
 import com.google.android.exoplayer2.audio.AudioAttributes;
 import com.google.android.exoplayer2.decoder.DecoderCounters;
+import com.google.android.exoplayer2.decoder.DecoderReuseEvaluation;
 import com.google.android.exoplayer2.metadata.Metadata;
+import com.google.android.exoplayer2.source.LoadEventInfo;
+import com.google.android.exoplayer2.source.MediaLoadData;
 import com.google.android.exoplayer2.text.Cue;
-import com.google.android.exoplayer2.source.MediaSourceEventListener;
-import com.google.android.exoplayer2.source.TrackGroupArray;
-import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
@@ -204,7 +204,8 @@ public class ListenerMux implements ExoPlayerListener, MediaPlayer.OnPreparedLis
     }
 
     public void onVideoDecoderInitialized(String decoderName) {
-        healthMonitor.onVideoDecoderInitialized(decoderName);
+        if (healthMonitor != null)
+            healthMonitor.onVideoDecoderInitialized(decoderName);
     }
 
     @Override
@@ -226,6 +227,17 @@ public class ListenerMux implements ExoPlayerListener, MediaPlayer.OnPreparedLis
         if (healthMonitor != null) {
             healthMonitor.onVideoInputFormatChanged(format);
         }
+    }
+
+    /**
+     * alsi++ Added fix: On some devices onVideoSizeChanged is not called, but not onVideoInputFormatChanged
+     */
+    public void onVideoInputFormatChanged(
+            @NonNull EventTime eventTime,
+            Format format,
+            @Nullable DecoderReuseEvaluation decoderReuseEvaluation) {
+        muxNotifier.onVideoSizeChanged(format.width, format.height,
+                0, format.pixelWidthHeightRatio);
     }
 
     /** alsi++
@@ -269,116 +281,133 @@ public class ListenerMux implements ExoPlayerListener, MediaPlayer.OnPreparedLis
     }
 
     @Override
-    public void onTimelineChanged(EventTime eventTime, int reason) {
+    public void onTimelineChanged(@NonNull EventTime eventTime, int reason) {
         if (analyticsListener != null) {
             analyticsListener.onTimelineChanged(eventTime, reason);
         }
     }
 
     @Override
-    public void onPositionDiscontinuity(EventTime eventTime, int reason) {
+    public void onPositionDiscontinuity(@NonNull EventTime eventTime, int reason) {
         if (analyticsListener != null) {
             analyticsListener.onPositionDiscontinuity(eventTime, reason);
         }
     }
 
     @Override
-    public void onSeekStarted(EventTime eventTime) {
+    public void onSeekStarted(@NonNull EventTime eventTime) {
         if (analyticsListener != null) {
             analyticsListener.onSeekStarted(eventTime);
         }
     }
 
     @Override
-    public void onSeekProcessed(EventTime eventTime) {
+    public void onSeekProcessed(@NonNull EventTime eventTime) {
         if (analyticsListener != null) {
             analyticsListener.onSeekProcessed(eventTime);
         }
     }
 
     @Override
-    public void onPlaybackParametersChanged(EventTime eventTime, PlaybackParameters playbackParameters) {
+    public void onPlaybackParametersChanged(@NonNull EventTime eventTime,
+                                            @NonNull PlaybackParameters playbackParameters) {
         if (analyticsListener != null) {
             analyticsListener.onPlaybackParametersChanged(eventTime, playbackParameters);
         }
     }
 
     @Override
-    public void onRepeatModeChanged(EventTime eventTime, int repeatMode) {
+    public void onRepeatModeChanged(@NonNull EventTime eventTime, int repeatMode) {
         if (analyticsListener != null) {
             analyticsListener.onRepeatModeChanged(eventTime, repeatMode);
         }
     }
 
     @Override
-    public void onShuffleModeChanged(EventTime eventTime, boolean shuffleModeEnabled) {
+    public void onShuffleModeChanged(@NonNull EventTime eventTime, boolean shuffleModeEnabled) {
         if (analyticsListener != null) {
             analyticsListener.onShuffleModeChanged(eventTime, shuffleModeEnabled);
         }
     }
 
     @Override
-    public void onLoadingChanged(EventTime eventTime, boolean isLoading) {
+    public void onLoadingChanged(@NonNull EventTime eventTime, boolean isLoading) {
         if (analyticsListener != null) {
             analyticsListener.onLoadingChanged(eventTime, isLoading);
         }
     }
 
     @Override
-    public void onPlayerError(EventTime eventTime, ExoPlaybackException error) {
+    public void onPlayerError(@NonNull AnalyticsListener.EventTime eventTime,
+                              @NonNull PlaybackException error) {
         if (analyticsListener != null) {
             analyticsListener.onPlayerError(eventTime, error);
         }
     }
 
     @Override
-    public void onTracksChanged(EventTime eventTime, TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {
+    public void onTracksInfoChanged(@NonNull AnalyticsListener.EventTime eventTime,
+                                    @NonNull TracksInfo tracksInfo) {
         if (analyticsListener != null) {
-            analyticsListener.onTracksChanged(eventTime, trackGroups, trackSelections);
+            analyticsListener.onTracksInfoChanged(eventTime, tracksInfo);
         }
     }
 
     @Override
-    public void onLoadStarted(EventTime eventTime, MediaSourceEventListener.LoadEventInfo loadEventInfo, MediaSourceEventListener.MediaLoadData mediaLoadData) {
+    public void onLoadStarted(@NonNull AnalyticsListener.EventTime eventTime,
+                              @NonNull LoadEventInfo loadEventInfo,
+                              @NonNull MediaLoadData mediaLoadData) {
         if (analyticsListener != null) {
             analyticsListener.onLoadStarted(eventTime, loadEventInfo, mediaLoadData);
         }
     }
 
     @Override
-    public void onLoadCompleted(EventTime eventTime, MediaSourceEventListener.LoadEventInfo loadEventInfo, MediaSourceEventListener.MediaLoadData mediaLoadData) {
+    public void onLoadCompleted(@NonNull AnalyticsListener.EventTime eventTime,
+                                @NonNull LoadEventInfo loadEventInfo,
+                                @NonNull MediaLoadData mediaLoadData) {
         if (analyticsListener != null) {
             analyticsListener.onLoadCompleted(eventTime, loadEventInfo, mediaLoadData);
         }
     }
 
     @Override
-    public void onLoadCanceled(EventTime eventTime, MediaSourceEventListener.LoadEventInfo loadEventInfo, MediaSourceEventListener.MediaLoadData mediaLoadData) {
+    public void onLoadCanceled(@NonNull AnalyticsListener.EventTime eventTime,
+                               @NonNull LoadEventInfo loadEventInfo,
+                               @NonNull MediaLoadData mediaLoadData) {
         if (analyticsListener != null) {
             analyticsListener.onLoadCanceled(eventTime, loadEventInfo, mediaLoadData);
         }
     }
 
     @Override
-    public void onLoadError(EventTime eventTime, MediaSourceEventListener.LoadEventInfo loadEventInfo, MediaSourceEventListener.MediaLoadData mediaLoadData, IOException error, boolean wasCanceled) {
+    public void onLoadError(@NonNull AnalyticsListener.EventTime eventTime,
+                            @NonNull LoadEventInfo loadEventInfo,
+                            @NonNull MediaLoadData mediaLoadData,
+                            @NonNull IOException error,
+                            boolean wasCanceled) {
         if (analyticsListener != null) {
             analyticsListener.onLoadError(eventTime, loadEventInfo, mediaLoadData, error, wasCanceled);
         }
     }
 
     @Override
-    public void onDownstreamFormatChanged(EventTime eventTime, MediaSourceEventListener.MediaLoadData mediaLoadData) {
+    public void onDownstreamFormatChanged(@NonNull AnalyticsListener.EventTime eventTime,
+                                          @NonNull MediaLoadData mediaLoadData) {
         if (analyticsListener != null) {
             analyticsListener.onDownstreamFormatChanged(eventTime, mediaLoadData);
         }
     }
 
     @Override
-    public void onUpstreamDiscarded(EventTime eventTime, MediaSourceEventListener.MediaLoadData mediaLoadData) {
+    public void onUpstreamDiscarded(@NonNull AnalyticsListener.EventTime eventTime,
+                                    @NonNull MediaLoadData mediaLoadData) {
         if (analyticsListener != null) {
             analyticsListener.onUpstreamDiscarded(eventTime, mediaLoadData);
         }
     }
+
+/* alsi-- Methods are not supported in new analytics listener
 
     @Override
     public void onMediaPeriodCreated(EventTime eventTime) {
@@ -400,7 +429,7 @@ public class ListenerMux implements ExoPlayerListener, MediaPlayer.OnPreparedLis
             analyticsListener.onReadingStarted(eventTime);
         }
     }
-
+*/
     @Override
     public void onBandwidthEstimate(EventTime eventTime, int totalLoadTimeMs, long totalBytesLoaded, long bitrateEstimate) {
         if (analyticsListener != null) {
@@ -479,63 +508,65 @@ public class ListenerMux implements ExoPlayerListener, MediaPlayer.OnPreparedLis
     }
 
     @Override
-    public void onAudioSessionId(EventTime eventTime, int audioSessionId) {
+    public void onAudioSessionIdChanged(@NonNull AnalyticsListener.EventTime eventTime, int audioSessionId) {
         if (analyticsListener != null) {
-            analyticsListener.onAudioSessionId(eventTime, audioSessionId);
+            analyticsListener.onAudioSessionIdChanged(eventTime, audioSessionId);
         }
     }
 
     @Override
-    public void onAudioUnderrun(EventTime eventTime, int bufferSize, long bufferSizeMs, long elapsedSinceLastFeedMs) {
+    public void onAudioUnderrun(@NonNull EventTime eventTime, int bufferSize, long bufferSizeMs, long elapsedSinceLastFeedMs) {
         if (analyticsListener != null) {
             analyticsListener.onAudioUnderrun(eventTime, bufferSize, bufferSizeMs, elapsedSinceLastFeedMs);
         }
     }
 
     @Override
-    public void onDroppedVideoFrames(EventTime eventTime, int droppedFrames, long elapsedMs) {
+    public void onDroppedVideoFrames(@NonNull EventTime eventTime, int droppedFrames, long elapsedMs) {
         if (analyticsListener != null) {
             analyticsListener.onDroppedVideoFrames(eventTime, droppedFrames, elapsedMs);
         }
     }
 
     @Override
-    public void onVideoSizeChanged(EventTime eventTime, int width, int height, int unappliedRotationDegrees, float pixelWidthHeightRatio) {
+    public void onVideoSizeChanged(@NonNull EventTime eventTime, int width, int height, int unappliedRotationDegrees, float pixelWidthHeightRatio) {
         if (analyticsListener != null) {
             analyticsListener.onVideoSizeChanged(eventTime, width, height, unappliedRotationDegrees, pixelWidthHeightRatio);
         }
     }
 
     @Override
-    public void onRenderedFirstFrame(EventTime eventTime, Surface surface) {
+    public void onRenderedFirstFrame(@NonNull AnalyticsListener.EventTime eventTime,
+                                     @NonNull Object output,
+                                     long renderTimeMs) {
         if (analyticsListener != null) {
-            analyticsListener.onRenderedFirstFrame(eventTime, surface);
+            analyticsListener.onRenderedFirstFrame(eventTime, output, renderTimeMs);
         }
     }
 
     @Override
-    public void onDrmKeysLoaded(EventTime eventTime) {
+    public void onDrmKeysLoaded(@NonNull EventTime eventTime) {
         if (analyticsListener != null) {
             analyticsListener.onDrmKeysLoaded(eventTime);
         }
     }
 
     @Override
-    public void onDrmSessionManagerError(EventTime eventTime, Exception error) {
+    public void onDrmSessionManagerError(@NonNull EventTime eventTime, @NonNull Exception error) {
         if (analyticsListener != null) {
             analyticsListener.onDrmSessionManagerError(eventTime, error);
         }
     }
 
     @Override
-    public void onDrmKeysRestored(EventTime eventTime) {
+    public void onDrmKeysRestored(@NonNull EventTime eventTime) {
         if (analyticsListener != null) {
             analyticsListener.onDrmKeysRestored(eventTime);
         }
     }
 
     @Override
-    public void onDrmKeysRemoved(EventTime eventTime) {
+    public void onDrmKeysRemoved(@NonNull EventTime eventTime) {
         if (analyticsListener != null) {
             analyticsListener.onDrmKeysRemoved(eventTime);
         }
@@ -679,12 +710,7 @@ public class ListenerMux implements ExoPlayerListener, MediaPlayer.OnPreparedLis
     private void notifyPreparedListener() {
         notifiedPrepared = true;
 
-        delayedHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                performPreparedHandlerNotification();
-            }
-        });
+        delayedHandler.post(this::performPreparedHandlerNotification);
     }
 
     private void performPreparedHandlerNotification() {
@@ -704,12 +730,9 @@ public class ListenerMux implements ExoPlayerListener, MediaPlayer.OnPreparedLis
 
         notifiedCompleted = true;
 
-        delayedHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                if (completionListener != null) {
-                    completionListener.onCompletion();
-                }
+        delayedHandler.post(() -> {
+            if (completionListener != null) {
+                completionListener.onCompletion();
             }
         });
     }
