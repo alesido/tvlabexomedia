@@ -77,6 +77,7 @@ import com.google.android.exoplayer2.source.TrackGroup;
 import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.source.hls.playlist.HlsPlaylistParserFactory;
 import com.google.android.exoplayer2.text.Cue;
+import com.google.android.exoplayer2.text.CueGroup;
 import com.google.android.exoplayer2.text.TextOutput;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.trackselection.MappingTrackSelector;
@@ -211,7 +212,6 @@ public class ExoMediaPlayer implements Player.Listener {
                 .build();
 
         player.addListener(this);
-        player.addAnalyticsListener(new EventLogger(trackSelector));
         player.addAnalyticsListener(new EventLogger(trackSelector));
         analyticsCollector = player.getAnalyticsCollector();
 
@@ -537,7 +537,7 @@ public class ExoMediaPlayer implements Player.Listener {
             return;
         }
 
-        DefaultTrackSelector.ParametersBuilder parametersBuilder = trackSelector.buildUponParameters();
+        DefaultTrackSelector.Parameters.Builder parametersBuilder = trackSelector.buildUponParameters();
         if (preferredAudioLanguage != null) {
             parametersBuilder.setPreferredAudioLanguage(preferredAudioLanguage);
         }
@@ -566,7 +566,7 @@ public class ExoMediaPlayer implements Player.Listener {
         // Retrieves the available tracks
         MappingTrackSelector.MappedTrackInfo mappedTrackInfo = trackSelector.getCurrentMappedTrackInfo();
         ExoPlayerRendererTracksInfo tracksInfo = getExoPlayerTracksInfo(type, 0, mappedTrackInfo);
-        DefaultTrackSelector.ParametersBuilder parametersBuilder = trackSelector.buildUponParameters();
+        DefaultTrackSelector.Parameters.Builder parametersBuilder = trackSelector.buildUponParameters();
 
         for (int rendererTrackIndex : tracksInfo.rendererTrackIndexes) {
             // Reset all renderers re-enabling so the player can select the streams default track.
@@ -581,7 +581,7 @@ public class ExoMediaPlayer implements Player.Listener {
         ExoPlayerRendererTracksInfo tracksInfo = getExoPlayerTracksInfo(type, 0, mappedTrackInfo);
         if (!tracksInfo.rendererTrackIndexes.isEmpty()) {
             boolean enabledSomething = false;
-            DefaultTrackSelector.ParametersBuilder parametersBuilder = trackSelector.buildUponParameters();
+            DefaultTrackSelector.Parameters.Builder parametersBuilder = trackSelector.buildUponParameters();
             for (int rendererTrackIndex : tracksInfo.rendererTrackIndexes) {
                 if (enabled) {
                     DefaultTrackSelector.SelectionOverride selectionOverride = trackSelector.getParameters().getSelectionOverride(rendererTrackIndex, mappedTrackInfo.getTrackGroups(rendererTrackIndex));
@@ -1323,6 +1323,11 @@ public class ExoMediaPlayer implements Player.Listener {
             if (captionListener != null) {
                 captionListener.onCues(cues);
             }
+        }
+
+        @Override
+        public void onCues(CueGroup cueGroup) {
+            // TODO onCues of CueGroup
         }
     }
 }

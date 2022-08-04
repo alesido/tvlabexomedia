@@ -395,11 +395,6 @@ public class ExoVideoDelegate {
         // region Player Event Listener
 
         @Override
-        public void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {
-            // reserved for possible future implementation
-        }
-
-        @Override
         public void onLoadingChanged(boolean isLoading) {
             // reserved for possible future implementation
         }

@@ -1158,7 +1158,7 @@ public class VideoView extends RelativeLayout {
         }
     }
 
-    protected class MuxNotifier extends ListenerMux.Notifier {
+    public class MuxNotifier extends ListenerMux.Notifier {
         @Nullable
         public OnVideoSizeChangedListener videoSizeChangedListener;
 

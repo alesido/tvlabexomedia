@@ -39,7 +39,6 @@ import com.google.android.exoplayer2.Format;
 import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
-import com.google.android.exoplayer2.TracksInfo;
 import com.google.android.exoplayer2.analytics.AnalyticsListener;
 import com.google.android.exoplayer2.audio.AudioAttributes;
 import com.google.android.exoplayer2.decoder.DecoderCounters;
@@ -342,14 +341,6 @@ public class ListenerMux implements ExoPlayerListener, MediaPlayer.OnPreparedLis
                               @NonNull PlaybackException error) {
         if (analyticsListener != null) {
             analyticsListener.onPlayerError(eventTime, error);
-        }
-    }
-
-    @Override
-    public void onTracksInfoChanged(@NonNull AnalyticsListener.EventTime eventTime,
-                                    @NonNull TracksInfo tracksInfo) {
-        if (analyticsListener != null) {
-            analyticsListener.onTracksInfoChanged(eventTime, tracksInfo);
         }
     }
 
